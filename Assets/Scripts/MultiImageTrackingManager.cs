@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
@@ -51,10 +50,10 @@ public class MultiImageTrackingManager : MonoBehaviour
         string name = trackedImage.referenceImage.name;
         GameObject obj = trackedObj[name];
 
+        //ListAllImage();
         if (trackedImage.trackingState == TrackingState.Tracking)
         {
-            obj.transform.position = trackedImage.transform.position;
-            obj.transform.rotation = trackedImage.transform.rotation;
+            obj.transform.SetPositionAndRotation(trackedImage.transform.position, trackedImage.transform.rotation);
             obj.SetActive(true);
         }
         else
@@ -78,7 +77,7 @@ public class MultiImageTrackingManager : MonoBehaviour
         foreach (ARTrackedImage removedImage in eventArgs.removed)
         {
             //Handle removed event
-            UpdateImage(removedImage);
+            trackedObj[removedImage.referenceImage.name].SetActive(false);
         }
     }
 }
