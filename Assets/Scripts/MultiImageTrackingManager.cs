@@ -27,6 +27,9 @@ public class MultiImageTrackingManager : MonoBehaviour
     {
         m_TrackedImageManager = GetComponent<ARTrackedImageManager>();
         trackedObj = new Dictionary<string, GameObject>();
+
+        toward = new List<(Vector3, Quaternion)>();
+
         foreach (GameObject obj in prefabs)
         {
             GameObject clone = Instantiate(obj);
@@ -45,19 +48,48 @@ public class MultiImageTrackingManager : MonoBehaviour
         }
     }
 
+    private List<(Vector3, Quaternion)> toward;
+
     void UpdateImage(ARTrackedImage trackedImage)
     {
-        string name = trackedImage.referenceImage.name;
-        GameObject obj = trackedObj[name];
+        GameObject obj = trackedObj[trackedImage.referenceImage.name];
 
         //ListAllImage();
-        if (trackedImage.trackingState == TrackingState.Tracking)
+        if (trackedImage.trackingState != TrackingState.None)
         {
-            obj.transform.SetPositionAndRotation(trackedImage.transform.position, trackedImage.transform.rotation);
-            obj.SetActive(true);
+            //obj.transform.SetPositionAndRotation(trackedImage.transform.position, trackedImage.transform.rotation);
+            if (trackedImage.trackingState == TrackingState.Tracking)
+            {
+                toward.Add((trackedImage.transform.position, trackedImage.transform.rotation));
+                obj.SetActive(true);
+            }
+            if (toward.Count > 0)
+            {
+                bool r, p;
+
+                r = false;
+                p = false;
+                if (Vector3.Distance(obj.transform.position, toward[0].Item1) < 0.01f)
+                {
+                    obj.transform.position = Vector3.Lerp(obj.transform.position, toward[0].Item1, 1f);
+                    p = true;
+                }
+                else
+                    obj.transform.position = Vector3.Lerp(obj.transform.position, toward[0].Item1, 0.1f);
+                if (Quaternion.Angle(obj.transform.rotation, toward[0].Item2) < 0.01f)
+                {
+                    obj.transform.rotation = Quaternion.Lerp(obj.transform.rotation, toward[0].Item2, 1f);
+                    r = true;
+                }
+                else
+                    obj.transform.rotation = Quaternion.Lerp(obj.transform.rotation, toward[0].Item2, 0.1f);
+                if (r && p)
+                    toward.RemoveAt(0);
+            }
         }
         else
         {
+            toward.Clear();
             obj.SetActive(false);
         }
     }
