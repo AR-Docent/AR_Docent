@@ -7,11 +7,20 @@ using UnityEngine.XR.ARSubsystems;
 [RequireComponent(typeof(ARTrackedImageManager))]
 public class MultiImageTrackingManager : MonoBehaviour
 {
-    ARTrackedImageManager m_TrackedImageManager;
-    Dictionary<string, GameObject> trackedObj;
+    private ARTrackedImageManager m_TrackedImageManager;
+    private Dictionary<string, GameObject> trackedObj;
+    
+    private GameObject towardObj = null;
+    private List<(Vector3, Quaternion)> toward;
 
     [SerializeField]
-    GameObject[] prefabs;
+    private GameObject[] prefabs;
+    [SerializeField]
+    [Range(0.0f, 1.0f)]
+    private float movindSpeed = 0.1f;
+    [SerializeField]
+    [Range(0.0f, 1.0f)]
+    private float rotateSpeed = 0.1f;
 
     void OnEnable()
     {
@@ -48,11 +57,10 @@ public class MultiImageTrackingManager : MonoBehaviour
         }
     }
 
-    private List<(Vector3, Quaternion)> toward;
 
     void UpdateImage(ARTrackedImage trackedImage)
     {
-        GameObject obj = trackedObj[trackedImage.referenceImage.name];
+        towardObj = trackedObj[trackedImage.referenceImage.name];
 
         //ListAllImage();
         if (trackedImage.trackingState != TrackingState.None)
@@ -61,36 +69,47 @@ public class MultiImageTrackingManager : MonoBehaviour
             if (trackedImage.trackingState == TrackingState.Tracking)
             {
                 toward.Add((trackedImage.transform.position, trackedImage.transform.rotation));
-                obj.SetActive(true);
-            }
-            if (toward.Count > 0)
-            {
-                bool r, p;
-
-                r = false;
-                p = false;
-                if (Vector3.Distance(obj.transform.position, toward[0].Item1) < 0.01f)
-                {
-                    obj.transform.position = Vector3.Lerp(obj.transform.position, toward[0].Item1, 1f);
-                    p = true;
-                }
-                else
-                    obj.transform.position = Vector3.Lerp(obj.transform.position, toward[0].Item1, 0.1f);
-                if (Quaternion.Angle(obj.transform.rotation, toward[0].Item2) < 0.01f)
-                {
-                    obj.transform.rotation = Quaternion.Lerp(obj.transform.rotation, toward[0].Item2, 1f);
-                    r = true;
-                }
-                else
-                    obj.transform.rotation = Quaternion.Lerp(obj.transform.rotation, toward[0].Item2, 0.1f);
-                if (r && p)
-                    toward.RemoveAt(0);
+                towardObj.SetActive(true);
             }
         }
         else
         {
-            toward.Clear();
-            obj.SetActive(false);
+            Debug.Log("img lost.");
+            if (toward.Count == 0)
+            {
+                towardObj.SetActive(false);
+                Debug.Log("toward clean");
+            }
+        }
+    }
+
+    void FixedUpdate()
+    {
+        if (toward.Count > 0 && towardObj != null)
+        {
+            //move toward image
+            bool r, p;
+
+            r = false;
+            p = false;
+            //position
+            if (Vector3.Distance(towardObj.transform.position, toward[0].Item1) < 0.01f)
+            {
+                towardObj.transform.position = Vector3.Lerp(towardObj.transform.position, toward[0].Item1, 1f);
+                p = true;
+            }
+            else
+                towardObj.transform.position = Vector3.Lerp(towardObj.transform.position, toward[0].Item1, movindSpeed);
+            //rotation
+            if (Quaternion.Angle(towardObj.transform.rotation, toward[0].Item2) < 0.01f)
+            {
+                towardObj.transform.rotation = Quaternion.Lerp(towardObj.transform.rotation, toward[0].Item2, 1f);
+                r = true;
+            }
+            else
+                towardObj.transform.rotation = Quaternion.Lerp(towardObj.transform.rotation, toward[0].Item2, rotateSpeed);
+            if (r && p)
+                toward.RemoveAt(0);
         }
     }
 

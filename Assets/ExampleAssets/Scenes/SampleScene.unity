@@ -372,6 +372,8 @@ MonoBehaviour:
   prefabs:
   - {fileID: 6260156911609647344, guid: 7a8759db732624f3a9b3b859486aebd6, type: 3}
   - {fileID: 4940731846959282785, guid: 5d6a381ff17034612983bb6e2de840d8, type: 3}
+  movindSpeed: 0.2
+  rotateSpeed: 0.2
 --- !u!114 &388525037
 MonoBehaviour:
   m_ObjectHideFlags: 0
