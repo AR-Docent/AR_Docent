@@ -21,6 +21,8 @@ public class MultiImageTrackingManager : MonoBehaviour
     [SerializeField]
     [Range(0.0f, 1.0f)]
     private float rotateSpeed = 0.1f;
+    [SerializeField]
+    Debugger debugger;
 
     void OnEnable()
     {
@@ -68,13 +70,17 @@ public class MultiImageTrackingManager : MonoBehaviour
             //obj.transform.SetPositionAndRotation(trackedImage.transform.position, trackedImage.transform.rotation);
             if (trackedImage.trackingState == TrackingState.Tracking)
             {
+                debugger.status = Debugger.t_status.Tracking;
                 toward.Add((trackedImage.transform.position, trackedImage.transform.rotation));
                 towardObj.SetActive(true);
             }
+            else
+                debugger.status = Debugger.t_status.Limited;
         }
         else
         {
             Debug.Log("img lost.");
+            debugger.status = Debugger.t_status.None;
             if (toward.Count == 0)
             {
                 towardObj.SetActive(false);
