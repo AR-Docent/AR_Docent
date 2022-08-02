@@ -370,10 +370,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefabs:
-  - {fileID: 6260156911609647344, guid: 7a8759db732624f3a9b3b859486aebd6, type: 3}
-  - {fileID: 4940731846959282785, guid: 5d6a381ff17034612983bb6e2de840d8, type: 3}
-  movindSpeed: 0.2
-  rotateSpeed: 0.2
+  - {fileID: 7528023355337430341, guid: 0a0c242631cd7411098dcd24ebc19293, type: 3}
+  - {fileID: 3729247513878705623, guid: 59d3f8eb112674383b984051871c0804, type: 3}
   debugger: {fileID: 1086948626}
 --- !u!114 &388525037
 MonoBehaviour:
@@ -389,7 +387,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SerializedLibrary: {fileID: 11400000, guid: 0820acbeccf52452589266683000ad1e,
     type: 2}
-  m_MaxNumberOfMovingImages: 1
+  m_MaxNumberOfMovingImages: 2
   m_TrackedImagePrefab: {fileID: 0}
 --- !u!1 &705507993
 GameObject:

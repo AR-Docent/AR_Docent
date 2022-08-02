@@ -1388,7 +1388,7 @@ GameObject:
   - component: {fileID: 6783459543325976406}
   - component: {fileID: 3506530880971147820}
   m_Layer: 0
-  m_Name: idle
+  m_Name: red
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
