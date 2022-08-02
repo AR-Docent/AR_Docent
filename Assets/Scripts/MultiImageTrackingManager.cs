@@ -11,16 +11,9 @@ public class MultiImageTrackingManager : MonoBehaviour
     private Dictionary<string, GameObject> trackedObj;
     
     private GameObject towardObj = null;
-    private List<(Vector3, Quaternion)> toward;
 
     [SerializeField]
     private GameObject[] prefabs;
-    [SerializeField]
-    [Range(0.0f, 1.0f)]
-    private float movindSpeed = 0.1f;
-    [SerializeField]
-    [Range(0.0f, 1.0f)]
-    private float rotateSpeed = 0.1f;
     [SerializeField]
     Debugger debugger;
 
@@ -38,8 +31,6 @@ public class MultiImageTrackingManager : MonoBehaviour
     {
         m_TrackedImageManager = GetComponent<ARTrackedImageManager>();
         trackedObj = new Dictionary<string, GameObject>();
-
-        toward = new List<(Vector3, Quaternion)>();
 
         foreach (GameObject obj in prefabs)
         {
@@ -64,58 +55,20 @@ public class MultiImageTrackingManager : MonoBehaviour
     {
         towardObj = trackedObj[trackedImage.referenceImage.name];
 
-        //ListAllImage();
-        if (trackedImage.trackingState != TrackingState.None)
+        if (trackedImage.trackingState == TrackingState.Tracking)
         {
-            //obj.transform.SetPositionAndRotation(trackedImage.transform.position, trackedImage.transform.rotation);
-            if (trackedImage.trackingState == TrackingState.Tracking)
-            {
-                debugger.status = Debugger.t_status.Tracking;
-                toward.Add((trackedImage.transform.position, trackedImage.transform.rotation));
-                towardObj.SetActive(true);
-            }
-            else
-                debugger.status = Debugger.t_status.Limited;
+            towardObj.transform.SetPositionAndRotation(trackedImage.transform.position, trackedImage.transform.rotation);
+            debugger.status = Debugger.t_status.Tracking;
+            towardObj.SetActive(true);
+        }
+        else if (trackedImage.trackingState == TrackingState.Limited)
+        {
+            debugger.status = Debugger.t_status.Limited;
         }
         else
         {
-            Debug.Log("img lost.");
             debugger.status = Debugger.t_status.None;
-            if (toward.Count == 0)
-            {
-                towardObj.SetActive(false);
-                Debug.Log("toward clean");
-            }
-        }
-    }
-
-    void FixedUpdate()
-    {
-        if (toward.Count > 0 && towardObj != null)
-        {
-            //move toward image
-            bool r, p;
-
-            r = false;
-            p = false;
-            //position
-            if (Vector3.Distance(towardObj.transform.position, toward[0].Item1) < 0.01f)
-            {
-                towardObj.transform.position = Vector3.Lerp(towardObj.transform.position, toward[0].Item1, 1f);
-                p = true;
-            }
-            else
-                towardObj.transform.position = Vector3.Lerp(towardObj.transform.position, toward[0].Item1, movindSpeed);
-            //rotation
-            if (Quaternion.Angle(towardObj.transform.rotation, toward[0].Item2) < 0.01f)
-            {
-                towardObj.transform.rotation = Quaternion.Lerp(towardObj.transform.rotation, toward[0].Item2, 1f);
-                r = true;
-            }
-            else
-                towardObj.transform.rotation = Quaternion.Lerp(towardObj.transform.rotation, toward[0].Item2, rotateSpeed);
-            if (r && p)
-                toward.RemoveAt(0);
+            towardObj.SetActive(false);
         }
     }
 
