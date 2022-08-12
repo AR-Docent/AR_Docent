@@ -10,12 +10,13 @@ public class MultiImageTrackingManager : MonoBehaviour
     private ARTrackedImageManager m_TrackedImageManager;
     private Dictionary<string, GameObject> trackedObj;
     
-    private GameObject towardObj = null;
-
     [SerializeField]
-    private GameObject[] prefabs;
+    private GameObject prefab;
     [SerializeField]
-    Debugger debugger;
+    private XRReferenceImageLibrary imageLib;
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float aboveDistance;
 
     void OnEnable()
     {
@@ -31,13 +32,13 @@ public class MultiImageTrackingManager : MonoBehaviour
     {
         m_TrackedImageManager = GetComponent<ARTrackedImageManager>();
         trackedObj = new Dictionary<string, GameObject>();
-
-        foreach (GameObject obj in prefabs)
+        foreach (var image in imageLib)
         {
-            GameObject clone = Instantiate(obj);
-            clone.name = obj.name;
-            clone.SetActive(false);
-            trackedObj.Add(clone.name, clone);
+            GameObject obj = Instantiate(prefab);
+            obj.GetComponent<GuidButton>().productName = image.name;
+            obj.SetActive(false);
+            trackedObj.Add(image.name, obj);
+            Debug.Log(image.name);
         }
     }
     
@@ -53,13 +54,14 @@ public class MultiImageTrackingManager : MonoBehaviour
 
     void UpdateImage(ARTrackedImage trackedImage)
     {
-        towardObj = trackedObj[trackedImage.referenceImage.name];
+        GameObject obj = trackedObj[trackedImage.referenceImage.name];
+        Debugger debugger = obj.GetComponent<Debugger>();
 
         if (trackedImage.trackingState == TrackingState.Tracking)
         {
-            towardObj.transform.SetPositionAndRotation(trackedImage.transform.position, trackedImage.transform.rotation);
+            obj.transform.SetPositionAndRotation(trackedImage.transform.position + Vector3.up * aboveDistance, Quaternion.identity);
             debugger.status = Debugger.t_status.Tracking;
-            towardObj.SetActive(true);
+            obj.SetActive(true);
         }
         else if (trackedImage.trackingState == TrackingState.Limited)
         {
@@ -68,7 +70,7 @@ public class MultiImageTrackingManager : MonoBehaviour
         else
         {
             debugger.status = Debugger.t_status.None;
-            towardObj.SetActive(false);
+            obj.SetActive(false);
         }
     }
 
