@@ -20,8 +20,8 @@ iOS, liDAR센서가 내장된 기기.
 # Todo List
 |task|check|설명|
 |-|-|-|
-|image tracking| - [ ] |작품을 트래킹하는데 성공.|
-|작품 설명 display| - [ ] |작품 설명을 text로 벽면에 display.|
-|tracking image upload server| - [ ] |트래킹할 작품이미지와 설명을 업로드하는 서버|
-|docent animation| - [ ] |docent의 안내 rig animation|
-|docent modeling| - [ ] | docent디자인, 모델링|
+|image tracking|[ ]|작품을 트래킹하는데 성공.|
+|작품 설명 display|[ ]|작품 설명을 text로 벽면에 display.|
+|tracking image upload server|[ ]|트래킹할 작품이미지와 설명을 업로드하는 서버|
+|docent animation|[ ]|docent의 안내 rig animation|
+|docent modeling|[ ]| docent디자인, 모델링|
