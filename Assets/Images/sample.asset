@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 848409ee8ba454f42a5ddff137688a27, type: 3}
+  m_Name: sample
+  m_EditorClassIdentifier: 
+  m_GuidLow: 4737656656360019258
+  m_GuidHigh: 1268167738053797275
+  m_DataStore:
+    m_Storage: []
+  m_Images:
+  - m_SerializedGuid:
+      m_GuidLow: 4994833085601367554
+      m_GuidHigh: 2348776883395199629
+    m_SerializedTextureGuid:
+      m_GuidLow: 8376099530982901296
+      m_GuidHigh: 3488251606894280507
+    m_Size: {x: 0.1, y: 0.10134529}
+    m_SpecifySize: 1
+    m_Name: cube
+    m_Texture: {fileID: 2800000, guid: 1b8d4630e225743d3b7f1edc5ac26830, type: 3}
+  - m_SerializedGuid:
+      m_GuidLow: 5057385072821056834
+      m_GuidHigh: 9820061230742461836
+    m_SerializedTextureGuid:
+      m_GuidLow: 14143651281394283120
+      m_GuidHigh: 9195966427614655896
+    m_Size: {x: 0.1, y: 0.1}
+    m_SpecifySize: 1
+    m_Name: capsule
+    m_Texture: {fileID: 2800000, guid: 7681327057e7c44898b5635cbea29e7f, type: 3}
