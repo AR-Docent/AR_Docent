@@ -9,6 +9,7 @@ public class RaycastClickEvent : MonoBehaviour
 
     private Ray _ray;
     private RaycastHit _hit;
+    private int _layer = 1 << 6;
 
     public bool clicked { get; private set; } = false;
     public Action<bool> clickEvent;
@@ -24,7 +25,7 @@ public class RaycastClickEvent : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             _ray = _mainCam.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(_ray, out _hit, 100f))
+            if (Physics.Raycast(_ray, out _hit, 100f, _layer))
             {
                 if (_hit.transform == this.transform)
                 {
