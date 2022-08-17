@@ -57,3 +57,13 @@ MonoBehaviour:
     m_SpecifySize: 1
     m_Name: jump
     m_Texture: {fileID: 0}
+  - m_SerializedGuid:
+      m_GuidLow: 5127462172767718768
+      m_GuidHigh: 12742328042581451941
+    m_SerializedTextureGuid:
+      m_GuidLow: 2634049474342802021
+      m_GuidHigh: 6393591081950317433
+    m_Size: {x: 0.06, y: 0.03768932}
+    m_SpecifySize: 1
+    m_Name: hiro_sample
+    m_Texture: {fileID: 0}
