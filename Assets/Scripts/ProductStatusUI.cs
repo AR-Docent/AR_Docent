@@ -1,64 +1,79 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 
 public class ProductStatusUI : MonoBehaviour
 {
-    public bool Tracking { get; set; }
+    public static uint screenInObj = 0;
 
     [SerializeField]
-    private Transform UIObj;
-
-    private ARTrackedImageManager m_TrackedImageManager;
-
+    private ARTrackedImageManager m_ARTrackedImageManager;
+    
     private Image _pointerImage;
     private TextMeshProUGUI _text;
-    
+
     //message
     private const string _trackedStr = "OK";
     private const string _untrackedStr = "Fit the artwork into a square";
-    //color
-    private Color _trackedColor = Color.green;
-    private Color _untrackedColor = Color.grey;
+
+    private void Awake()
+    {
+        _pointerImage = transform.GetChild(0).GetComponent<Image>();
+        _text = transform.GetChild(1).GetComponent<TextMeshProUGUI>();
+        //get tracked image event
+    }
 
     void OnEnable()
     {
-        m_TrackedImageManager.trackedImagesChanged += OnChanged;
+        m_ARTrackedImageManager.trackedImagesChanged += Trace;
     }
 
     void OnDisable()
     {
-        m_TrackedImageManager.trackedImagesChanged -= OnChanged;
-    }
-
-    void Awake()
-    {
-        m_TrackedImageManager = GetComponent<ARTrackedImageManager>();
-
-        _pointerImage = UIObj.GetChild(0).GetComponent<Image>();
-        _text = UIObj.GetChild(1).GetComponent<TextMeshProUGUI>();
+        m_ARTrackedImageManager.trackedImagesChanged -= Trace;
     }
 
     void Start()
     {
-        untracked();
+        Untracked();
     }
 
-    private void OnChanged(ARTrackedImagesChangedEventArgs eventArgs)
+    void Update()
     {
-        if (eventArgs.added.Count > 0)
+        if (screenInObj == 0)
+            Untracked();
+        else
+            Tracked();
+    }
+
+    void TraceTarget(ARTrackedImage trackedImage)
+    {
+        if (trackedImage.trackingState == TrackingState.Tracking
+            || trackedImage.trackingState == TrackingState.Limited)
         {
-            tracked();
         }
         else
         {
-            untracked();
         }
     }
 
-    public void untracked()
+    void Trace(ARTrackedImagesChangedEventArgs eventArg)
+    {
+        foreach (ARTrackedImage newImage in eventArg.added)
+        {
+        }
+        foreach (ARTrackedImage updateImage in eventArg.added)
+        {
+        }
+        foreach (ARTrackedImage removedImage in eventArg.added)
+        {
+        }
+    }
+
+    void Untracked()
     {
         //image and text visible;
         if (!_pointerImage.enabled)
@@ -66,21 +81,19 @@ public class ProductStatusUI : MonoBehaviour
         if (!_text.enabled)
             _text.enabled = true;
         //change image and message
-        _pointerImage.color = _untrackedColor;
+        _pointerImage.color = Color.gray;
         _text.text = _untrackedStr;
-        Tracking = false;
     }
 
-    public void tracked()
+    void Tracked()
     {
         //change image and message
-        _pointerImage.color = _trackedColor;
+        _pointerImage.color = Color.green;
         _text.text = _trackedStr;
-        Tracking = true;
-        StartCoroutine(disablePointer());
+        StartCoroutine(DisablePointer());
     }
 
-    IEnumerator disablePointer()
+    IEnumerator DisablePointer()
     {
         yield return new WaitForSecondsRealtime(1.0f);
         if (_pointerImage.enabled)
