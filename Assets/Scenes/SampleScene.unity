@@ -184,9 +184,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad81035a2d31241478e22074e8d4356d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 5239059947232978107, guid: 07e50f7945594468f81582c9a96fba54, type: 3}
-  imageLib: {fileID: 11400000, guid: 0820acbeccf52452589266683000ad1e, type: 2}
-  aboveDistance: 0.1
+  objPool: {fileID: 1753404750}
+  aboveDistance: 0
 --- !u!114 &221166094
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -524,7 +523,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f07f69881c8e54e1f8ab5ce5147f5292, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ARTrackedImageManager: {fileID: 0}
+  objPool: {fileID: 1753404750}
+  m_ARTrackedImageManager: {fileID: 221166094}
+  screenRect: {fileID: 265978408}
 --- !u!1 &735934918
 GameObject:
   m_ObjectHideFlags: 0
@@ -812,6 +813,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1753404749}
+  - component: {fileID: 1753404750}
   m_Layer: 0
   m_Name: ARObjManager
   m_TagString: Untagged
@@ -834,6 +836,23 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1753404750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1753404748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e39a64f5ff17c4d11aa0a1c8914c3ef3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canvasTrans: {fileID: 265978408}
+  prefab: {fileID: 5239059947232978107, guid: 07e50f7945594468f81582c9a96fba54, type: 3}
+  UIprefab: {fileID: 2073637611418728681, guid: 02a1508ac153d4beca89c8dfc739a345,
+    type: 3}
+  imageLib: {fileID: 11400000, guid: 0820acbeccf52452589266683000ad1e, type: 2}
 --- !u!1 &1842158582
 GameObject:
   m_ObjectHideFlags: 0

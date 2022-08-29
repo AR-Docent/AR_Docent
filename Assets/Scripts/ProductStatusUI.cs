@@ -4,16 +4,26 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
+using System.Collections.Generic;
 
 public class ProductStatusUI : MonoBehaviour
 {
     public static uint screenInObj = 0;
 
     [SerializeField]
+    private ARObjPool objPool;
+    [SerializeField]
     private ARTrackedImageManager m_ARTrackedImageManager;
+    [SerializeField]
+    private RectTransform screenRect;
     
     private Image _pointerImage;
     private TextMeshProUGUI _text;
+    
+    private float _canvas_x;
+    private float _canvas_y;
+
+    private List<string> _imageName = null;
 
     //message
     private const string _trackedStr = "OK";
@@ -23,7 +33,14 @@ public class ProductStatusUI : MonoBehaviour
     {
         _pointerImage = transform.GetChild(0).GetComponent<Image>();
         _text = transform.GetChild(1).GetComponent<TextMeshProUGUI>();
-        //get tracked image event
+
+        _canvas_x = screenRect.rect.width;
+        _canvas_y = screenRect.rect.height;
+
+        _imageName = new List<string>();
+
+        Debug.Log(_canvas_x);
+        Debug.Log(_canvas_y);
     }
 
     void OnEnable()
@@ -47,29 +64,42 @@ public class ProductStatusUI : MonoBehaviour
             Untracked();
         else
             Tracked();
+        //move UI
+        for (int i = 0; i < _imageName.Count; ++i)
+        {
+            MoveUI(_imageName[i]);
+        }
     }
 
-    void TraceTarget(ARTrackedImage trackedImage)
+    void MoveUI(string name)
     {
-        if (trackedImage.trackingState == TrackingState.Tracking
-            || trackedImage.trackingState == TrackingState.Limited)
-        {
-        }
-        else
-        {
-        }
+            //Set UI prefab active.
+            GameObject obj = objPool?.trackedUI[name];
+            RaycastScreenStatus r_status = objPool.trackedObj[name].GetComponent<RaycastScreenStatus>();
+            PointManager p_manager = objPool.trackedObj[name].GetComponent<PointManager>();
+            if (r_status.ScreenIn)
+            {
+                RectTransform r_trans = obj.GetComponent<RectTransform>();
+                r_trans.position = new Vector3(r_status.viewPort.x * _canvas_x, r_status.viewPort.y * _canvas_y, 0f);
+                //p_manager.UIScale = 0.5f * Vector3.Distance(objPool.trackedObj[name].transform.position, Camera.main.transform.position);
+                obj.SetActive(true);
+            }
+            else
+            {
+                obj.SetActive(false);
+            }
+
     }
 
     void Trace(ARTrackedImagesChangedEventArgs eventArg)
     {
-        foreach (ARTrackedImage newImage in eventArg.added)
+        foreach (var newImage in eventArg.added)
         {
+            _imageName.Add(newImage.referenceImage.name);
         }
-        foreach (ARTrackedImage updateImage in eventArg.added)
+        foreach (var removedImage in eventArg.removed)
         {
-        }
-        foreach (ARTrackedImage removedImage in eventArg.added)
-        {
+            _imageName.Remove(removedImage.referenceImage.name);
         }
     }
 

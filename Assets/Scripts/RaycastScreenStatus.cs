@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class RaycastScreenStatus : MonoBehaviour
@@ -27,19 +25,20 @@ public class RaycastScreenStatus : MonoBehaviour
         }
     }
 
+    public Vector3 viewPort { get; private set; }
+    
     private bool _status = false;
-    private Vector3 screenPos;
 
     void OnDisable()
     {
-        ProductStatusUI.screenInObj = ProductStatusUI.screenInObj > 0 ? ProductStatusUI.screenInObj - 1 : ProductStatusUI.screenInObj;
+        ScreenIn = false;
     }
 
     // Update is called once per frame
     void Update()
     {
-        screenPos = Camera.main.WorldToViewportPoint(transform.position);
-        if (screenPos.x > 0f && screenPos.x < 1f)
+        viewPort = Camera.main.WorldToViewportPoint(transform.position);
+        if (viewPort.x > 0f && viewPort.x < 1f && viewPort.y > 0f && viewPort.y < 1f)
         {
             ScreenIn = true;
         }

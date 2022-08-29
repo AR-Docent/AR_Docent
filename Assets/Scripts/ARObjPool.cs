@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARSubsystems;
 
-public class ARObjManager : MonoBehaviour
+public class ARObjPool : MonoBehaviour
 {
     public Dictionary<string, GameObject> trackedObj { get; private set; }
     public Dictionary<string, GameObject> trackedUI { get; private set; }
+    [SerializeField]
+    private Transform canvasTrans;
     
     [SerializeField]
     private GameObject prefab;
@@ -27,22 +29,10 @@ public class ARObjManager : MonoBehaviour
             trackedObj.Add(image.name, obj);
 
             //initialize trackedUI
-            GameObject UIObj = Instantiate(UIprefab);
+            GameObject UIObj = Instantiate(UIprefab, canvasTrans);
             UIObj.GetComponent<PointManager>().Name = image.name;
             UIObj.SetActive(false);
             trackedUI.Add(image.name, UIObj);
         }
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }
