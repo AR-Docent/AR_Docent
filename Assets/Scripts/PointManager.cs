@@ -7,7 +7,7 @@ public class PointManager : MonoBehaviour
     public bool Tracking { get; private set;}
 
     public string Name { get; set; } = null;
-    public float UIScale { get { return _rect.localScale.x; } set { _rect.localScale = new Vector3(value, value, value); } }
+    public float UIScale { get { return _rect.localScale.x; } set { _rect.sizeDelta = new Vector3(value, value, value); } }
     
     private Image _pointerImage;
     private TextMeshProUGUI _text;
