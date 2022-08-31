@@ -10,7 +10,7 @@ public class Debugger : MonoBehaviour
         set
         {
             _status = value;
-            if (!_click.clicked)
+            if (!_isSelected)
             {
                 switch (_status)
                 {
@@ -29,25 +29,30 @@ public class Debugger : MonoBehaviour
     }
 
     public enum t_status { None, Limited, Tracking }
+
+    public RaycastClickEvent click { private get; set; } = null;
+    
     private t_status _status;
     private Material _mat;
 
-    private RaycastClickEvent _click;
+    private bool _isSelected;
 
     void Awake()
     {
         _mat = GetComponent<MeshRenderer>().material;
-        _click = GetComponent<RaycastClickEvent>();
     }
-    
+
     void OnEnable()
     {
-        _click.clickEvent += OnClick;
+        _isSelected = false;
+        if (click != null)
+            click.clickEvent += OnClick;
     }
-    
+
     void OnDisable()
     {
-        _click.clickEvent -= OnClick;
+        if (click != null)
+            click.clickEvent -= OnClick;
     }
 
     // Start is called before the first frame update
@@ -56,9 +61,13 @@ public class Debugger : MonoBehaviour
         status = t_status.None;
     }
 
-    void OnClick(bool clicked)
+    void OnClick(Transform t)
     {
-        if (clicked)
+        if (t.CompareTag("Product"))
+        {
+            _isSelected = !_isSelected;
+        }
+        if (_isSelected)
             _mat.color = Color.blue;
         else
             status = _status;

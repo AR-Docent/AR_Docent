@@ -9,8 +9,7 @@ public class RaycastClickEvent : MonoBehaviour
     private RaycastHit _hit;
     private int _layer = 1 << 6;
 
-    public bool clicked { get; private set; } = false;
-    public Action<bool> clickEvent;
+    public Action<Transform> clickEvent;
 
     void Awake()
     {
@@ -25,11 +24,7 @@ public class RaycastClickEvent : MonoBehaviour
             _ray = _mainCam.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(_ray, out _hit, 100f, _layer))
             {
-                if (_hit.transform == this.transform)
-                {
-                    clicked = !clicked;
-                    clickEvent(clicked);
-                }
+                clickEvent(_hit.transform);
             }
         }
     }

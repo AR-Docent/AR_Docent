@@ -75,13 +75,13 @@ public class ProductStatusUI : MonoBehaviour
     {
         //Set UI prefab active.
         GameObject obj = objPool?.trackedUI[name];
-        RaycastScreenStatus r_status = objPool.trackedObj[name].GetComponent<RaycastScreenStatus>();
-        PointManager p_manager = objPool.trackedUI[name].GetComponent<PointManager>();
-        if (r_status.ScreenIn)
+        ScreenBoundary screenBoundary = objPool.trackedObj[name].GetComponent<ScreenBoundary>();
+        PointManager point = objPool.trackedUI[name].GetComponent<PointManager>();
+        if (screenBoundary.ScreenIn)
         {
             RectTransform r_trans = obj.GetComponent<RectTransform>();
-            r_trans.position = new Vector3(r_status.viewPort.x * _canvas_x, r_status.viewPort.y * _canvas_y, 0f);
-            p_manager.UIScale= 1f / (2f * Vector3.Distance(objPool.trackedObj[name].transform.position, Camera.main.transform.position));
+            r_trans.position = new Vector3(screenBoundary.viewPort.x * _canvas_x, screenBoundary.viewPort.y * _canvas_y, 0f);
+            point.UIScale= 1f / (2f * Vector3.Distance(objPool.trackedObj[name].transform.position, Camera.main.transform.position));
             obj.SetActive(true);
         }
         else

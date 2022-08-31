@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class RaycastScreenStatus : MonoBehaviour
+public class ScreenBoundary : MonoBehaviour
 {
     public bool ScreenIn
     {
