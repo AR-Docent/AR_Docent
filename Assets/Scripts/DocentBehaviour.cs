@@ -1,21 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class DocentBehaviour : MonoBehaviour
 {
-    RaycastClickEvent _click;
-    NavMeshAgent _agent;
+    [SerializeField]
+    private TextMeshProUGUI _text;
+    
+    private RaycastClickEvent _click;
+    private NavMeshAgent _agent;
+    
+    private int _layer = 1 << 7;
 
     void Awake()
     {
-        _click = GetComponent<RaycastClickEvent>();
         _agent = GetComponent<NavMeshAgent>();
-    }
-
-    void Start()
-    {
     }
 
     void OnEnable()
@@ -28,21 +29,24 @@ public class DocentBehaviour : MonoBehaviour
         _click.clickEvent -= OnClick;
     }
 
-    void OnClick(Transform t)
+    void OnClick(Transform t, Vector3 p)
     {
         if (t.CompareTag("Product"))
         {
-            _agent.SetDestination(t.position);
-        }
-        else
-        {
-            this.transform.position = t.position;
+            SetDest(p);
         }
     }
 
-    public void SetDest(Vector3 pos)
+    public void SetDest(Vector3 p)
     {
-        _agent.SetDestination(pos);
+        RaycastHit _hit;
+        Ray _ray = new Ray(p, Vector3.down);
+
+        if (Physics.Raycast(_ray, out _hit, 100f, _layer))
+        {
+            _agent.SetDestination(_hit.point);
+            _text.text = "tracking";
+        }
     }
 
     // Update is called once per frame

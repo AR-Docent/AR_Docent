@@ -28,11 +28,13 @@ public class MeshGuidManager : MonoBehaviour
     {
         foreach (var addMesh in eventArgs.added)
         {
-            addMesh.GetComponent<NavMeshSurface>().BuildNavMesh();
+            Debug.Log(addMesh.name + "add");
+            addMesh.transform.GetComponent<NavMeshSurface>().BuildNavMesh();
         }
         foreach (var updatedMesh in eventArgs.updated)
         {
-            updatedMesh.GetComponent<NavMeshSurface>().BuildNavMesh();
+            Debug.Log(updatedMesh.name + "updated");
+            updatedMesh.transform.GetComponent<NavMeshSurface>().BuildNavMesh();
         }
         foreach (var deletedMesh in eventArgs.removed)
         {

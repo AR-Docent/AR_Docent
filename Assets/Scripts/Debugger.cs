@@ -30,7 +30,7 @@ public class Debugger : MonoBehaviour
 
     public enum t_status { None, Limited, Tracking }
 
-    public RaycastClickEvent click { private get; set; } = null;
+    private RaycastClickEvent _click;
     
     private t_status _status;
     private Material _mat;
@@ -40,19 +40,18 @@ public class Debugger : MonoBehaviour
     void Awake()
     {
         _mat = GetComponent<MeshRenderer>().material;
+        _click = GetComponent<RaycastClickEvent>();
     }
 
     void OnEnable()
     {
         _isSelected = false;
-        if (click != null)
-            click.clickEvent += OnClick;
+        _click.clickEvent += OnClick;
     }
 
     void OnDisable()
     {
-        if (click != null)
-            click.clickEvent -= OnClick;
+        _click.clickEvent -= OnClick;
     }
 
     // Start is called before the first frame update
@@ -61,7 +60,7 @@ public class Debugger : MonoBehaviour
         status = t_status.None;
     }
 
-    void OnClick(Transform t)
+    void OnClick(Transform t, Vector3 p)
     {
         if (t.CompareTag("Product"))
         {

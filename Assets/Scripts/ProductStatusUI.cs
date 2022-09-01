@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
 using System.Collections.Generic;
 
 public class ProductStatusUI : MonoBehaviour
@@ -38,9 +37,6 @@ public class ProductStatusUI : MonoBehaviour
         _canvas_y = screenRect.rect.height;
 
         _imageName = new List<string>();
-
-        Debug.Log(_canvas_x);
-        Debug.Log(_canvas_y);
     }
 
     void OnEnable()
