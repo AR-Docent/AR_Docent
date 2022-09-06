@@ -7,23 +7,32 @@ public class GuidButton : MonoBehaviour
 {
     public string productName { get; set; } = null;
 
-    private TextMeshPro _text;
+    public bool Tracking { get; set; } = false;
+
+    public bool Selecting { get; private set; } = false;
+
+    private RaycastClickEvent _click;
 
     void Awake()
     {
-        _text = GetComponentInChildren<TextMeshPro>();
+        _click = GetComponent<RaycastClickEvent>();
     }
 
     private void OnEnable()
     {
-        if (productName != null)
-        {
-            _text.text = productName;
-        }
+        _click.clickEvent += OnClick;
     }
 
     private void OnDisable()
     {
-        
+        _click.clickEvent -= OnClick;
+    }
+
+    void OnClick(Transform t, Vector3 p)
+    {
+        if (t == this.transform)
+        {
+            Selecting = !Selecting;
+        }
     }
 }

@@ -48,6 +48,12 @@ public class NavigateDocent : MonoBehaviour
         //navPlane.GetComponent<NavMeshSurface>()?.BuildNavMesh();
     }
 
+    public void BakeNavInPlane()
+    {
+        //activate navMesh
+        navPlane.GetComponent<NavMeshSurface>()?.BuildNavMesh();
+    }
+
     private void OnChanged(ARPlanesChangedEventArgs eventArgs)
     {
         foreach (var addPlane in eventArgs.added)
