@@ -16,12 +16,8 @@ public class ARObjPool : MonoBehaviour
     [SerializeField]
     private XRReferenceImageLibrary imageLib;
 
-    private RaycastClickEvent clickEvent;
-
     void Awake()
     {
-        clickEvent = GetComponent<RaycastClickEvent>();
-
         trackedObj = new Dictionary<string, GameObject>();
         trackedUI = new Dictionary<string, GameObject>();
         foreach (var image in imageLib)

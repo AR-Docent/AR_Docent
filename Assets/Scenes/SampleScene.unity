@@ -232,6 +232,7 @@ GameObject:
   - component: {fileID: 221166093}
   - component: {fileID: 221166095}
   - component: {fileID: 221166096}
+  - component: {fileID: 221166097}
   m_Layer: 0
   m_Name: AR Session Origin
   m_TagString: Untagged
@@ -327,6 +328,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   navPlane: {fileID: 1525262664}
+--- !u!114 &221166097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 221166090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69b2ec704b22c4bafa94279f0734bdf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &265978404
 GameObject:
   m_ObjectHideFlags: 0
@@ -573,13 +586,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1753404752}
-        m_TargetAssemblyTypeName: DocentSpawn, Assembly-CSharp
-        m_MethodName: SpawnDocent
-        m_Mode: 1
+      - m_Target: {fileID: 221166096}
+        m_TargetAssemblyTypeName: NavigateDocent, Assembly-CSharp
+        m_MethodName: PlacePlane
+        m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgument: {fileID: 1842158587}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Transform, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -964,7 +977,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Spawn
+  m_text: place
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1247,7 +1260,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1628462765}
   - component: {fileID: 1628462766}
-  - component: {fileID: 1628462767}
   m_Layer: 0
   m_Name: ARMeshManager
   m_TagString: Untagged
@@ -1290,18 +1302,6 @@ MonoBehaviour:
   m_TextureCoordinates: 0
   m_Colors: 0
   m_ConcurrentQueueSize: 4
---- !u!114 &1628462767
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1628462764}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e06ae935c926442778ce9edce6eded00, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1750465853
 GameObject:
   m_ObjectHideFlags: 0
@@ -1388,7 +1388,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1753404749}
   - component: {fileID: 1753404750}
-  - component: {fileID: 1753404751}
   - component: {fileID: 1753404752}
   m_Layer: 0
   m_Name: ARObjManager
@@ -1429,18 +1428,6 @@ MonoBehaviour:
   UIprefab: {fileID: 2073637611418728681, guid: 02a1508ac153d4beca89c8dfc739a345,
     type: 3}
   imageLib: {fileID: 11400000, guid: 0820acbeccf52452589266683000ad1e, type: 2}
---- !u!114 &1753404751
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1753404748}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 69b2ec704b22c4bafa94279f0734bdf8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1753404752
 MonoBehaviour:
   m_ObjectHideFlags: 0

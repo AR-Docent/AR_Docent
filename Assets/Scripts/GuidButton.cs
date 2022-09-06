@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 public class GuidButton : MonoBehaviour
@@ -11,28 +10,8 @@ public class GuidButton : MonoBehaviour
 
     public bool Selecting { get; private set; } = false;
 
-    private RaycastClickEvent _click;
-
-    void Awake()
+    public void OnClick()
     {
-        _click = GetComponent<RaycastClickEvent>();
-    }
-
-    private void OnEnable()
-    {
-        _click.clickEvent += OnClick;
-    }
-
-    private void OnDisable()
-    {
-        _click.clickEvent -= OnClick;
-    }
-
-    void OnClick(Transform t, Vector3 p)
-    {
-        if (t == this.transform)
-        {
-            Selecting = !Selecting;
-        }
+        Selecting = !Selecting;
     }
 }

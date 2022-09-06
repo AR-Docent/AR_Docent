@@ -44,8 +44,6 @@ public class NavigateDocent : MonoBehaviour
         }
         //move plane to real ground position y
         navPlane.transform.position = new Vector3(targetPos.position.x, _y, targetPos.position.z);
-        //activate navMesh
-        //navPlane.GetComponent<NavMeshSurface>()?.BuildNavMesh();
     }
 
     public void BakeNavInPlane()
