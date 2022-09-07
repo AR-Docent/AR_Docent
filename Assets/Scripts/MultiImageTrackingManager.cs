@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
@@ -7,16 +6,13 @@ using UnityEngine.XR.ARSubsystems;
 [RequireComponent(typeof(ARTrackedImageManager))]
 public class MultiImageTrackingManager : MonoBehaviour
 {
-    private ARTrackedImageManager m_TrackedImageManager;
-    private Dictionary<string, GameObject> trackedObj;
-    
     [SerializeField]
-    private GameObject prefab;
-    [SerializeField]
-    private XRReferenceImageLibrary imageLib;
+    private ARObjPool objPool;
     [SerializeField]
     [Range(0f, 1f)]
     private float aboveDistance;
+    
+    private ARTrackedImageManager m_TrackedImageManager;
 
     void OnEnable()
     {
@@ -31,15 +27,6 @@ public class MultiImageTrackingManager : MonoBehaviour
     void Awake()
     {
         m_TrackedImageManager = GetComponent<ARTrackedImageManager>();
-        trackedObj = new Dictionary<string, GameObject>();
-        foreach (var image in imageLib)
-        {
-            GameObject obj = Instantiate(prefab);
-            obj.GetComponent<GuidButton>().productName = image.name;
-            obj.SetActive(false);
-            trackedObj.Add(image.name, obj);
-            Debug.Log(image.name);
-        }
     }
     
     void ListAllImage()
@@ -54,7 +41,7 @@ public class MultiImageTrackingManager : MonoBehaviour
 
     void UpdateImage(ARTrackedImage trackedImage)
     {
-        GameObject obj = trackedObj[trackedImage.referenceImage.name];
+        GameObject obj = objPool?.trackedObj[trackedImage.referenceImage.name];
         Debugger debugger = obj.GetComponent<Debugger>();
 
         if (trackedImage.trackingState == TrackingState.Tracking)
@@ -89,7 +76,7 @@ public class MultiImageTrackingManager : MonoBehaviour
         foreach (ARTrackedImage removedImage in eventArgs.removed)
         {
             //Handle removed event
-            trackedObj[removedImage.referenceImage.name].SetActive(false);
+            objPool?.trackedObj[removedImage.referenceImage.name].SetActive(false);
         }
     }
 }
