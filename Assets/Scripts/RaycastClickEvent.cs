@@ -16,16 +16,6 @@ public class RaycastClickEvent : MonoBehaviour
         _mainCam = Camera.main;
     }
 
-    void OnEnable()
-    {
-        clickEvent += GuidObjectEvent;
-    }
-
-    void OnDisable()
-    {
-        clickEvent -= GuidObjectEvent;
-    }
-
     // Update is called once per frame
     void Update()
     {
@@ -36,14 +26,6 @@ public class RaycastClickEvent : MonoBehaviour
             {
                 clickEvent(_hit.transform, _hit.point);
             }
-        }
-    }
-
-    void GuidObjectEvent(Transform t, Vector3 vec)
-    {
-        if (t.CompareTag("Product"))
-        {
-            t.GetComponent<GuidButton>().OnClick();
         }
     }
 }
