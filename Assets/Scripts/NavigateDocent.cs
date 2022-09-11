@@ -1,7 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using TMPro;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -22,11 +20,12 @@ public class NavigateDocent : MonoBehaviour
     private NavMeshAgent _agent;
     private NavMeshSurface _surface;
 
-    //private Transform _groundTrans = null;
-	private Transform _groundTrans;
+	private Transform _groundTrans = null;
     private List<ARPlane> _planeList;
 
     private Vector3 _dest;
+
+    private Coroutine _bakeCoroutine = null;
 
 	void Awake()
     {
@@ -41,10 +40,15 @@ public class NavigateDocent : MonoBehaviour
 
     private void Start()
     {
-        navAgent.transform.position = Vector3.zero;
         Navigating = false;
+        navAgent.transform.position = Vector3.zero;
+        //set nav disabled
+        navPlane.SetActive(false);
+        navAgent.SetActive(false);
+        // set rotation will be controlled manualy
+        _agent.updateRotation = false;
 
-        _groundTrans = navPlane.transform;
+        StartCoroutine(InitAgent(Camera.main.transform.position));
     }
 
     void OnEnable()
@@ -61,17 +65,19 @@ public class NavigateDocent : MonoBehaviour
 
     void Update()
     {
-        if (Navigating == true)
+        if (Navigating != true)
+            return;
+        //move agent
+        _agent.Move(_agent.desiredVelocity);
+        //rotate agent
+        navAgent.transform.rotation = Quaternion.LookRotation(_agent.steeringTarget, navPlane.transform.up);
+        //Debug.Log("moving: " + _agent.remainingDistance);
+        if (_agent.remainingDistance <= _agent.stoppingDistance)
         {
-            _agent.Move(_agent.desiredVelocity);
-            //Debug.Log("moving: " + _agent.remainingDistance);
-            if (_agent.remainingDistance <= _agent.stoppingDistance)
-            {
-                Navigating = false;
-                _agent.isStopped = true;
-                Debug.Log("Stop");
-            }
-
+            //arrive
+            Navigating = false;
+            _agent.isStopped = true;
+            Debug.Log("Stop");
         }
     }
 
@@ -97,6 +103,49 @@ public class NavigateDocent : MonoBehaviour
         _agent.Warp(targetPos);
     }
 
+    IEnumerator InitAgent(Vector3 startPos)
+    {
+        while (_groundTrans == null)
+        {
+            yield return new WaitForEndOfFrame();
+        }
+        startPos += Vector3.forward;
+
+        Vector3 _ground = new Vector3(startPos.x, _groundTrans.position.y, startPos.z);
+
+        //set active
+        navAgent.SetActive(true);
+        navPlane.SetActive(true);
+        //move
+        PlacePlane(_ground);
+        PlaceAgent(_ground);
+        //rotate
+        navAgent.transform.rotation = Quaternion.LookRotation(navAgent.transform.position - Camera.main.transform.position, navPlane.transform.up);
+    }
+
+    IEnumerator BuildNav()
+    {
+        //wait another buildNav coroutine running
+        while (_bakeCoroutine != null)
+        {
+            yield return new WaitForEndOfFrame();
+        }
+        _surface.BuildNavMesh();
+        while (_surface.navMeshData == null)
+        {
+            yield return new WaitForEndOfFrame();
+        }
+        _agent.SetDestination(_dest);
+        while (_agent.destination == null)
+        {
+            yield return new WaitForEndOfFrame();
+        }
+        Debug.Log("start");
+        //finish
+        Navigating = true;
+        _bakeCoroutine = null;
+    }
+
     void Navigate(Transform target)
     {
         Vector3 g_targetPos = new(target.position.x, _groundTrans.position.y, target.position.z);
@@ -116,30 +165,8 @@ public class NavigateDocent : MonoBehaviour
         PlacePlane(g_startPos + diffVec / 2);
         //set dest
         _dest = g_targetPos;
-        //navmesh
-        StartNavMesh();
-    }
-
-    void StartNavMesh()
-    {
         //activate navMesh
-        StartCoroutine(BuildNav());
-    }
-
-    IEnumerator BuildNav()
-    {
-        _surface.BuildNavMesh();
-        while (_surface.navMeshData == null)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-        _agent.SetDestination(_dest);
-        while (_agent.destination == null)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-        Debug.Log("start");
-        Navigating = true;
+        _bakeCoroutine = StartCoroutine(BuildNav());
     }
     
     void OnClick(Transform t, Vector3 p)
@@ -152,7 +179,6 @@ public class NavigateDocent : MonoBehaviour
 
             if (objGuid.Selecting)
             {
-                //set docent position y
                 //set targetPos
                 Navigate(t);
             }
