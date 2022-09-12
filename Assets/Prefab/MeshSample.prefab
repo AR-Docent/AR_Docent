@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4544909688636895811}
   - component: {fileID: 5851323743060933001}
   - component: {fileID: 8923099930344104399}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: MeshSample
   m_TagString: Untagged
   m_Icon: {fileID: 0}

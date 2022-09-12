@@ -962,7 +962,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 968053edfd89749c48f4ea5d444abf64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MeshPrefab: {fileID: 0}
+  m_MeshPrefab: {fileID: 4544909688636895811, guid: a20e5c88e6c484f6aa633c66ca3c1745,
+    type: 3}
   m_Density: 1
   m_Normals: 1
   m_Tangents: 0
@@ -1322,9 +1323,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3506530880971147820, guid: 391d77f23f4b34e37b820d61baaa306f,
         type: 3}
+      propertyPath: m_Avatar
+      value: 
+      objectReference: {fileID: 9000000, guid: 320b1c2af77554f99a1658df4a6d3d5c, type: 3}
+    - target: {fileID: 3506530880971147820, guid: 391d77f23f4b34e37b820d61baaa306f,
+        type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: 75d3a58b3d7879f41926561701407a48, type: 2}
+      objectReference: {fileID: 9100000, guid: 098e8b996f6774cbbb951565f14d8b29, type: 2}
     - target: {fileID: 6783459543325976406, guid: 391d77f23f4b34e37b820d61baaa306f,
         type: 3}
       propertyPath: m_RootOrder

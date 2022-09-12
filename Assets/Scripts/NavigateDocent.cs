@@ -7,7 +7,15 @@ using UnityEngine.XR.ARFoundation;
 
 public class NavigateDocent : MonoBehaviour
 {
-    public bool Navigating { get; private set; }
+    public bool Navigating
+    {
+        get { return _navigate; }
+        private set
+        {
+            _navigate = value;
+            _agentAnimater.walk = _navigate;
+        }
+    }
 
     [SerializeField]
     private GameObject navPlane;
@@ -19,21 +27,27 @@ public class NavigateDocent : MonoBehaviour
 
     private NavMeshAgent _agent;
     private NavMeshSurface _surface;
+    private DocentAnimater _agentAnimater;
 
 	private Transform _groundTrans = null;
     private List<ARPlane> _planeList;
 
     private Vector3 _dest;
+    private bool _navigate;
+
+    private Vector3 _pastPos;
 
     private Coroutine _bakeCoroutine = null;
 
-	void Awake()
+    void Awake()
     {
         _arPlane = GetComponent<ARPlaneManager>();
         _clickEvent = GetComponent<RaycastClickEvent>();
 
         _surface = navPlane.GetComponent<NavMeshSurface>();
+
         _agent = navAgent.GetComponent<NavMeshAgent>();
+        _agentAnimater = navAgent.GetComponentInChildren<DocentAnimater>();
 
         _planeList = new List<ARPlane>();
     }
@@ -70,13 +84,16 @@ public class NavigateDocent : MonoBehaviour
         //move agent
         _agent.Move(_agent.desiredVelocity);
         //rotate agent
-        navAgent.transform.rotation = Quaternion.LookRotation(_agent.steeringTarget, navPlane.transform.up);
+        navAgent.transform.rotation = Quaternion.LookRotation(navAgent.transform.position - _pastPos, navPlane.transform.up);
+        _pastPos = navAgent.transform.position;
         //Debug.Log("moving: " + _agent.remainingDistance);
         if (_agent.remainingDistance <= _agent.stoppingDistance)
         {
             //arrive
             Navigating = false;
             _agent.isStopped = true;
+            //rotate agent
+            navAgent.transform.rotation = Quaternion.LookRotation(Camera.main.transform.position - navAgent.transform.position, navPlane.transform.up);
             Debug.Log("Stop");
         }
     }
@@ -120,7 +137,9 @@ public class NavigateDocent : MonoBehaviour
         PlacePlane(_ground);
         PlaceAgent(_ground);
         //rotate
-        navAgent.transform.rotation = Quaternion.LookRotation(navAgent.transform.position - Camera.main.transform.position, navPlane.transform.up);
+        navAgent.transform.rotation = Quaternion.LookRotation(Camera.main.transform.position - navAgent.transform.position, navPlane.transform.up);
+        //init pastPos
+        _pastPos = navAgent.transform.position;
     }
 
     IEnumerator BuildNav()
@@ -197,5 +216,7 @@ public class NavigateDocent : MonoBehaviour
         }
         _planeList.Sort((a, b) => a.transform.position.y.CompareTo(b.transform.position.y));
         _groundTrans = _planeList?[0].transform;
+        //
+        _groundTrans.transform.position += Vector3.up * 0.01f;
     }
 }
