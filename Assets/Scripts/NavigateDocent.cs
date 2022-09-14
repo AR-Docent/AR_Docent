@@ -85,6 +85,7 @@ public class NavigateDocent : MonoBehaviour
         _agent.Move(_agent.desiredVelocity);
         //rotate agent
         navAgent.transform.rotation = Quaternion.LookRotation(navAgent.transform.position - _pastPos, navPlane.transform.up);
+        //save pos
         _pastPos = navAgent.transform.position;
         //Debug.Log("moving: " + _agent.remainingDistance);
         if (_agent.remainingDistance <= _agent.stoppingDistance)

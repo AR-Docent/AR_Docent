@@ -361,6 +361,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6962451786223585171}
   - component: {fileID: 8234208303757981230}
+  - component: {fileID: 4884074544603384102}
   m_Layer: 7
   m_Name: Robot2
   m_TagString: Untagged
@@ -484,6 +485,19 @@ SkinnedMeshRenderer:
     m_Center: {x: 0.27024606, y: -0.041899905, z: -0.00000008940697}
     m_Extent: {x: 0.95254505, y: 0.23127724, z: 0.6514181}
   m_DirtyAABB: 0
+--- !u!114 &4884074544603384102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2220491894189468540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbc070fa6a2524c988bdbc28e16d408b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_queues: 800c0000
 --- !u!1 &2296118066607401625
 GameObject:
   m_ObjectHideFlags: 0
