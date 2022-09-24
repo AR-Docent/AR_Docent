@@ -1,29 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 public class GuidButton : MonoBehaviour
 {
     public string productName { get; set; } = null;
 
-    private TextMeshPro _text;
+    public bool Tracking { get; set; } = false;
 
-    void Awake()
-    {
-        _text = GetComponentInChildren<TextMeshPro>();
-    }
+    public bool Selecting { get; private set; } = false;
 
-    private void OnEnable()
+    public void OnClick()
     {
-        if (productName != null)
-        {
-            _text.text = productName;
-        }
-    }
-
-    private void OnDisable()
-    {
-        
+        Selecting = !Selecting;
     }
 }

@@ -18,26 +18,6 @@ MonoBehaviour:
     m_Storage: []
   m_Images:
   - m_SerializedGuid:
-      m_GuidLow: 4913995745889432488
-      m_GuidHigh: 1050016486092348581
-    m_SerializedTextureGuid:
-      m_GuidLow: 14182489098615318829
-      m_GuidHigh: 12950346661377781945
-    m_Size: {x: 0.3, y: 0.22500001}
-    m_SpecifySize: 1
-    m_Name: red
-    m_Texture: {fileID: 0}
-  - m_SerializedGuid:
-      m_GuidLow: 5606589856187231605
-      m_GuidHigh: 1812232902951693750
-    m_SerializedTextureGuid:
-      m_GuidLow: 4918864286066713240
-      m_GuidHigh: 8093396611645084938
-    m_Size: {x: 0.3, y: 0.22500001}
-    m_SpecifySize: 1
-    m_Name: black
-    m_Texture: {fileID: 0}
-  - m_SerializedGuid:
       m_GuidLow: 5543862665119076157
       m_GuidHigh: 2727080655486951052
     m_SerializedTextureGuid:

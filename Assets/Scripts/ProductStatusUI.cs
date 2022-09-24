@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
 using System.Collections.Generic;
 
 public class ProductStatusUI : MonoBehaviour
@@ -38,9 +37,6 @@ public class ProductStatusUI : MonoBehaviour
         _canvas_y = screenRect.rect.height;
 
         _imageName = new List<string>();
-
-        Debug.Log(_canvas_x);
-        Debug.Log(_canvas_y);
     }
 
     void OnEnable()
@@ -75,14 +71,20 @@ public class ProductStatusUI : MonoBehaviour
     {
         //Set UI prefab active.
         GameObject obj = objPool?.trackedUI[name];
-        RaycastScreenStatus r_status = objPool.trackedObj[name].GetComponent<RaycastScreenStatus>();
-        PointManager p_manager = objPool.trackedUI[name].GetComponent<PointManager>();
-        if (r_status.ScreenIn)
+        ScreenBoundary screenBoundary = objPool.trackedObj[name].GetComponent<ScreenBoundary>();
+        GuidButton guidStatus = objPool.trackedObj[name].GetComponent<GuidButton>();
+        PointManager point = objPool.trackedUI[name].GetComponent<PointManager>();
+        if (screenBoundary.ScreenIn)
         {
+            if (!obj.activeSelf)
+                obj.SetActive(true);
+            //move UI
             RectTransform r_trans = obj.GetComponent<RectTransform>();
-            r_trans.position = new Vector3(r_status.viewPort.x * _canvas_x, r_status.viewPort.y * _canvas_y, 0f);
-            p_manager.UIScale= 1f / (2f * Vector3.Distance(objPool.trackedObj[name].transform.position, Camera.main.transform.position));
-            obj.SetActive(true);
+            r_trans.position = new Vector3(screenBoundary.viewPort.x * _canvas_x, screenBoundary.viewPort.y * _canvas_y, 0f);
+            //set status
+            point.Tracking = guidStatus.Tracking;
+            point.Selecting = guidStatus.Selecting;
+            point.UIScale= 1f / (2f * Vector3.Distance(objPool.trackedObj[name].transform.position, Camera.main.transform.position));
         }
         else
         {

@@ -38,25 +38,25 @@ public class MultiImageTrackingManager : MonoBehaviour
         }
     }
 
-
     void UpdateImage(ARTrackedImage trackedImage)
     {
         GameObject obj = objPool?.trackedObj[trackedImage.referenceImage.name];
-        Debugger debugger = obj.GetComponent<Debugger>();
+        GuidButton status = obj.GetComponent<GuidButton>();
 
         if (trackedImage.trackingState == TrackingState.Tracking)
         {
+            //position
             obj.transform.SetPositionAndRotation(trackedImage.transform.position + Vector3.up * aboveDistance, Quaternion.identity);
-            debugger.status = Debugger.t_status.Tracking;
+            //status
+            status.Tracking = true;
             obj.SetActive(true);
         }
         else if (trackedImage.trackingState == TrackingState.Limited)
         {
-            debugger.status = Debugger.t_status.Limited;
+            status.Tracking = false;
         }
         else
         {
-            debugger.status = Debugger.t_status.None;
             obj.SetActive(false);
         }
     }
