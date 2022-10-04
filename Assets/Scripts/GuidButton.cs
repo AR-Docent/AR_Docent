@@ -10,8 +10,14 @@ public class GuidButton : MonoBehaviour
 
     public bool Selecting { get; private set; } = false;
 
+    public bool DocentArive { get; set; } = false;
+
     public void OnClick()
     {
         Selecting = !Selecting;
+    }
+
+    public void LoadData()
+    {
     }
 }
