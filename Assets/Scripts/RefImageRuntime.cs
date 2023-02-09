@@ -23,8 +23,9 @@ public class RefImageRuntime : MonoBehaviour
 
     private void Awake()
     {
-        image_names = new List<string>();
+        //image_names = new List<string>();
         imageDict = new Dictionary<string, Texture2D>();
+        audioDict = new Dictionary<string, AudioClip>();
     }
 
     // Start is called before the first frame update
@@ -33,7 +34,6 @@ public class RefImageRuntime : MonoBehaviour
     {
         //manager = GetComponent<ARTrackedImageManager>();
         //runtimeLibrary = manager.CreateRuntimeLibrary();
-        //StartCoroutine(DownloadProducts());
         StartCoroutine(DownloadProducts());
     }
 
@@ -63,18 +63,15 @@ public class RefImageRuntime : MonoBehaviour
         }
         //serialize: tojson
         //string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
-        string jsonStr = "{ \"Items\":" + UnityWebRequest.UnEscapeURL(request.downloadHandler.text) + "}";
+        string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
         Debug.Log(jsonStr);
         Product[] products = MyFromJson<Product>(jsonStr);
 
-        Debug.Log(DateTime.UtcNow);
-
         foreach (Product prod in products)
         {
-            StartCoroutine(GetRemoteTexture(prod.image_name, prod.image_url));
-            //StartCoroutine(GetRemoteAudio(prod.audio_name, prod.audio_url));
+            StartCoroutine(GetRemoteTexture(prod.Image_name, prod.Image_url));
+            StartCoroutine(GetRemoteAudio(prod.Audio_name, prod.Audio_url));
         }
-
         Debug.Log("download end");
     }
 
@@ -105,18 +102,21 @@ public class RefImageRuntime : MonoBehaviour
             yield break;
         }
         //add
-        image_names.Add(name);
+        //image_names.Add(name);
         imageDict.Add(name, DownloadHandlerTexture.GetContent(request));
     }
 
     IEnumerator GetRemoteAudio(string name, string url)
     {
+        AudioClip audio = null;
+
         using UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
         UnityWebRequestAsyncOperation oper = request.SendWebRequest();
 
         while (oper.isDone == false)
         {
-            yield return null;
+            Debug.Log("audio loading");
+            yield return new WaitForSeconds(1f);
         }
         if (request.result != UnityWebRequest.Result.Success)
         {
@@ -124,6 +124,9 @@ public class RefImageRuntime : MonoBehaviour
             yield break;
         }
         //add
-        audioDict.Add(name, DownloadHandlerAudioClip.GetContent(request));
+        audio = DownloadHandlerAudioClip.GetContent(request);
+
+        Debug.Log(audio.length);
+        audioDict.Add(name, audio);
     }
 }
