@@ -4,6 +4,9 @@ using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.XR.ARFoundation;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Timers;
 
 public class NavigateDocent : MonoBehaviour
 {
@@ -29,7 +32,7 @@ public class NavigateDocent : MonoBehaviour
     private NavMeshSurface _surface;
     private DocentAnimater _agentAnimater;
 
-	private Transform _groundTrans = null;
+    private Transform _groundTrans = null;
     private List<ARPlane> _planeList;
 
     private Vector3 _dest;
@@ -38,6 +41,7 @@ public class NavigateDocent : MonoBehaviour
     private Vector3 _pastPos;
 
     private Coroutine _bakeCoroutine = null;
+    Task _bakeTask = null;
 
     void Awake()
     {
@@ -87,16 +91,20 @@ public class NavigateDocent : MonoBehaviour
         navAgent.transform.rotation = Quaternion.LookRotation(navAgent.transform.position - _pastPos, navPlane.transform.up);
         //save pos
         _pastPos = navAgent.transform.position;
-        //Debug.Log("moving: " + _agent.remainingDistance);
         if (_agent.remainingDistance <= _agent.stoppingDistance)
         {
             //arrive
-            Navigating = false;
-            _agent.isStopped = true;
-            //rotate agent
-            navAgent.transform.rotation = Quaternion.LookRotation(Camera.main.transform.position - navAgent.transform.position, navPlane.transform.up);
-            Debug.Log("Stop");
+            Arrive();
         }
+    }
+
+    void Arrive()
+    {
+        Navigating = false;
+        _agent.isStopped = true;
+        //rotate agent
+        navAgent.transform.rotation = Quaternion.LookRotation(Camera.main.transform.position - navAgent.transform.position, navPlane.transform.up);
+        Debug.Log("Stop");
     }
 
     void PlacePlane(Vector3 targetPos)
@@ -129,11 +137,16 @@ public class NavigateDocent : MonoBehaviour
         }
         startPos += Vector3.forward;
 
-        Vector3 _ground = new Vector3(startPos.x, _groundTrans.position.y, startPos.z);
-
         //set active
         navAgent.SetActive(true);
         navPlane.SetActive(true);
+        //place agent
+        MoveAgentToFront(startPos);
+    }
+
+    void MoveAgentToFront(Vector3 startPos)
+    {
+        Vector3 _ground = new Vector3(startPos.x, _groundTrans.position.y, startPos.z);
         //move
         PlacePlane(_ground);
         PlaceAgent(_ground);
@@ -142,7 +155,7 @@ public class NavigateDocent : MonoBehaviour
         //init pastPos
         _pastPos = navAgent.transform.position;
     }
-
+    /*
     IEnumerator BuildNav()
     {
         //wait another buildNav coroutine running
@@ -165,11 +178,43 @@ public class NavigateDocent : MonoBehaviour
         Navigating = true;
         _bakeCoroutine = null;
     }
-
-    void Navigate(Transform target)
+    */
+    async void BuildNavMesh()
     {
+        Debug.LogFormat("Build Nav Mesh 현재 스레드: {0}", Thread.CurrentThread.ManagedThreadId);
+        Debug.LogFormat("Build Nav Mesh 현재 프레임: {0}", Time.frameCount);
+
+        Task _bake_surface = Task.Run(() =>
+        {
+
+            Debug.LogFormat("bake surface 현재 스레드: {0}", Thread.CurrentThread.ManagedThreadId);
+            Debug.LogFormat("bake surface 현재 프레임: {0}", Time.frameCount);
+            _surface.BuildNavMesh();
+        });
+        await _bake_surface;
+        Task _bake_agent = Task.Run(() =>
+        {
+
+            Debug.LogFormat("bake agent 현재 스레드: {0}", Thread.CurrentThread.ManagedThreadId);
+            Debug.LogFormat("bake agent 현재 프레임: {0}", Time.frameCount);
+            _agent.SetDestination(_dest);
+        });
+        await _bake_agent;
+
+        Navigating = true;
+        _bakeTask = null;
+    }
+
+    async void Navigate(Transform target)
+    {
+        Debug.LogFormat("Navigate 현재 스레드: {0}", Thread.CurrentThread.ManagedThreadId);
+        Debug.LogFormat("Navigate 현재 프레임: {0}", Time.frameCount);
+
+        if (_bakeTask != null)
+            await _bakeTask;
+
         Vector3 g_targetPos = new(target.position.x, _groundTrans.position.y, target.position.z);
-        Vector3 g_startPos = new (navAgent.transform.position.x, _groundTrans.position.y, navAgent.transform.position.z);
+        Vector3 g_startPos = new(navAgent.transform.position.x, _groundTrans.position.y, navAgent.transform.position.z);
 
         //set navPlane scale
         float dist = Vector3.Distance(g_startPos, g_targetPos) * 0.1f + 0.2f;
@@ -186,7 +231,8 @@ public class NavigateDocent : MonoBehaviour
         //set dest
         _dest = g_targetPos;
         //activate navMesh
-        _bakeCoroutine = StartCoroutine(BuildNav());
+        //_bakeCoroutine = StartCoroutine(BuildNav());
+        _bakeTask = Task.Run(() => { BuildNavMesh(); });
     }
     
     void OnClick(Transform t, Vector3 p)
@@ -201,6 +247,8 @@ public class NavigateDocent : MonoBehaviour
             {
                 //set targetPos
                 Navigate(t);
+                //load docent data
+                objGuid.LoadData();
             }
         }
     }
@@ -217,7 +265,6 @@ public class NavigateDocent : MonoBehaviour
         }
         _planeList.Sort((a, b) => a.transform.position.y.CompareTo(b.transform.position.y));
         _groundTrans = _planeList?[0].transform;
-        //
         _groundTrans.transform.position += Vector3.up * 0.01f;
     }
 }
