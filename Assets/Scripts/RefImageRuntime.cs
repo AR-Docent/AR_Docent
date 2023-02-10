@@ -16,20 +16,21 @@ public class RefImageRuntime : MonoBehaviour
     ARTrackedImageManager manager;
     RuntimeReferenceImageLibrary runtimeLibrary;
 
-    public List<string> image_names;
+    Dictionary<string, Texture2D> imageDict; 
+    Dictionary<string, AudioClip> audioDict;
+
+    public Dictionary<int, ProductBus> productBusLst { get; private set; }
     
-    public Dictionary<string, Texture2D> imageDict; 
-    public Dictionary<string, AudioClip> audioDict;
 
     private void Awake()
     {
-        //image_names = new List<string>();
+        productBusLst = new Dictionary<int, ProductBus>();
+
         imageDict = new Dictionary<string, Texture2D>();
         audioDict = new Dictionary<string, AudioClip>();
     }
 
     // Start is called before the first frame update
-    [Obsolete]
     void Start()
     {
         //manager = GetComponent<ARTrackedImageManager>();
@@ -44,6 +45,18 @@ public class RefImageRuntime : MonoBehaviour
             //add image to mutableLibrary
             //mutableLibrary.ScheduleAddImageJob();
         }
+    }
+
+    bool TaskRunning(List<IEnumerator> lst)
+    {
+        bool result = true;
+
+        foreach (IEnumerator iter in lst)
+        {
+            bool i = !(iter.MoveNext());
+            result &= i;
+        }
+        return !result;
     }
 
     IEnumerator DownloadProducts()
@@ -62,17 +75,35 @@ public class RefImageRuntime : MonoBehaviour
             yield break;
         }
         //serialize: tojson
-        //string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
         string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
         Debug.Log(jsonStr);
+
+        //save in products
         Product[] products = MyFromJson<Product>(jsonStr);
+
+        List<IEnumerator> task_lst = new List<IEnumerator>();
 
         foreach (Product prod in products)
         {
-            StartCoroutine(GetRemoteTexture(prod.Image_name, prod.Image_url));
-            StartCoroutine(GetRemoteAudio(prod.Audio_name, prod.Audio_url));
+            IEnumerator img_task = GetRemoteTexture(prod.Image_name, prod.Image_url);
+            IEnumerator audio_task = GetRemoteAudio(prod.Audio_name, prod.Audio_url);
+
+            task_lst.Add(img_task);
+            task_lst.Add(audio_task);
+
+            //run task
+            StartCoroutine(img_task);
+            StartCoroutine(audio_task);
+        }
+        //wait
+        while (TaskRunning(task_lst))
+        {
+            yield return new WaitForSeconds(0.3f);
         }
         Debug.Log("download end");
+        //make product bus
+        MakeProductBus(products);
+        //make xr reference
     }
 
     [Serializable]
@@ -94,7 +125,7 @@ public class RefImageRuntime : MonoBehaviour
 
         while (oper.isDone == false)
         {
-            yield return null;
+            yield return new WaitForSeconds(0.3f);
         }
         if (request.result != UnityWebRequest.Result.Success)
         {
@@ -102,7 +133,6 @@ public class RefImageRuntime : MonoBehaviour
             yield break;
         }
         //add
-        //image_names.Add(name);
         imageDict.Add(name, DownloadHandlerTexture.GetContent(request));
     }
 
@@ -116,7 +146,7 @@ public class RefImageRuntime : MonoBehaviour
         while (oper.isDone == false)
         {
             Debug.Log("audio loading");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.3f);
         }
         if (request.result != UnityWebRequest.Result.Success)
         {
@@ -128,5 +158,22 @@ public class RefImageRuntime : MonoBehaviour
 
         Debug.Log(audio.length);
         audioDict.Add(name, audio);
+    }
+
+    void MakeProductBus(Product[] products)
+    {
+        foreach (Product prod in products)
+        {
+            ProductBus bus = new()
+            {
+                id = prod.Id,
+                artist = prod.Name,
+                productName = prod.Title,
+                content = prod.Content,
+                audio = audioDict[prod.Audio_name]
+            };
+
+            productBusLst.Add(prod.Id, bus);
+        }
     }
 }
