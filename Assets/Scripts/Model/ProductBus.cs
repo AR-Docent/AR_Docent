@@ -12,5 +12,7 @@ public class ProductBus
 
     public string content { get; set; }
 
+    public Texture2D image { get; set; }
+
     public AudioClip audio { get; set; }
 }
