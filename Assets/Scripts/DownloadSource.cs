@@ -61,7 +61,6 @@ public class DownloadSource : Singleton<DownloadSource>
         UnityWebRequestAsyncOperation oper = request.SendWebRequest();
         while (oper.isDone == false)
         {
-            Debug.Log("loading");
             yield return null;
         }
         if (request.result != UnityWebRequest.Result.Success)
@@ -93,7 +92,7 @@ public class DownloadSource : Singleton<DownloadSource>
         //wait
         while (TaskRunning(task_lst))
         {
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(0.001f);
         }
 
         task_lst.Clear();
@@ -106,6 +105,7 @@ public class DownloadSource : Singleton<DownloadSource>
         complete = true;
     }
 
+    //순차적
     IEnumerator GetRemoteTexture(string name, string url)
     {
         using UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
@@ -113,7 +113,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
         while (oper.isDone == false)
         {
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(0.001f); //시간을 짧게.
         }
         if (request.result != UnityWebRequest.Result.Success)
         {
@@ -124,6 +124,7 @@ public class DownloadSource : Singleton<DownloadSource>
         imageDict.Add(name, DownloadHandlerTexture.GetContent(request));
     }
 
+    //필수적이지 않.
     IEnumerator GetRemoteAudio(string name, string url)
     {
         AudioClip audio = null;
@@ -133,8 +134,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
         while (oper.isDone == false)
         {
-            Debug.Log("audio loading");
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(0.001f);
         }
         if (request.result != UnityWebRequest.Result.Success)
         {

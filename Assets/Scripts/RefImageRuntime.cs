@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using UnityEditor.ShaderGraph.Serialization;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
@@ -11,7 +10,7 @@ using Unity.Jobs;
 public class RefImageRuntime : MonoBehaviour
 {
     ARTrackedImageManager manager;
-    RuntimeReferenceImageLibrary runtimeLibrary;
+    XRReferenceImageLibrary referenceImages;
 
     public bool completed { get; private set; }
 
@@ -19,7 +18,7 @@ public class RefImageRuntime : MonoBehaviour
     void Start()
     {
         manager = GetComponent<ARTrackedImageManager>();
-        StartCoroutine(DownloadProducts());
+        StartCoroutine(DownloadProducts()); //after ar session init
     }
 
     bool TaskRunning(List<IEnumerator> lst)
@@ -47,6 +46,31 @@ public class RefImageRuntime : MonoBehaviour
 
     IEnumerator RefInitialized()
     {
+        Debug.Log("make runtime library start");
+        
+        MutableRuntimeReferenceImageLibrary mutableLibrary = manager.referenceLibrary as MutableRuntimeReferenceImageLibrary;
+        List<AddReferenceImageJobState> states = new();
+
+        //add image to mutableLibrary
+        foreach (ProductBus bus in DownloadSource.Instance.productBusLst.Values)
+        {
+            Debug.Log($"add start");
+            AddReferenceImageJobState imgJobState =
+                mutableLibrary.ScheduleAddImageWithValidationJob(bus.image, bus.id.ToString(), 1f);
+
+            states.Add(imgJobState);
+        }
+
+        while (StateRunning(states))
+        {
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        Debug.Log("make runtime library end");
+    }
+
+    IEnumerator DownloadProducts()
+    {
         if (ARSession.state == ARSessionState.None
             || ARSession.state == ARSessionState.CheckingAvailability)
             yield return ARSession.CheckAvailability();
@@ -58,32 +82,16 @@ public class RefImageRuntime : MonoBehaviour
             yield break;
         }
 
-        runtimeLibrary = manager.CreateRuntimeLibrary();
-
-        if (runtimeLibrary is MutableRuntimeReferenceImageLibrary mutableLibrary)
+        if (!manager.descriptor.supportsMutableLibrary)
         {
-            List<AddReferenceImageJobState> states = new List<AddReferenceImageJobState>();
-
-            //add image to mutableLibrary
-            foreach (ProductBus bus in DownloadSource.Instance.productBusLst.Values)
-            {
-                AddReferenceImageJobState imgJobState =
-                    mutableLibrary.ScheduleAddImageWithValidationJob(bus.image, bus.id.ToString(), 1f);
-
-                states.Add(imgJobState);
-            }
-
-            while (StateRunning(states))
-            {
-                yield return new WaitForSeconds(0.3f);
-            }
+            Debug.Log("unsupport mutable library");
+            yield break;
         }
-    }
+        //start
 
-    IEnumerator DownloadProducts()
-    {
         List<IEnumerator> task_lst = new List<IEnumerator>();
 
+        manager.referenceLibrary = manager.CreateRuntimeLibrary(referenceImages);
         //make xr reference
         IEnumerator ref_task = RefInitialized();
 
@@ -94,6 +102,10 @@ public class RefImageRuntime : MonoBehaviour
         {
             yield return new WaitForSeconds(0.3f);
         }
+
+
+        manager.enabled = true;
+
         Debug.Log("ref upload end");
     }
 }
