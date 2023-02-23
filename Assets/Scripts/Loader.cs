@@ -18,7 +18,7 @@ public class Loader : MonoBehaviour
 
         yield return new WaitUntil(() => DownloadSource.Instance.complete);
 
-        AsyncOperation asyncOperation = SceneManager.LoadSceneAsync("SampleScene");
+        AsyncOperation asyncOperation = SceneManager.LoadSceneAsync("Main");
 
         asyncOperation.allowSceneActivation = false;
         timer += Time.deltaTime;
