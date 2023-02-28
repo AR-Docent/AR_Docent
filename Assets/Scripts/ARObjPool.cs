@@ -26,7 +26,7 @@ public class ARObjPool : MonoBehaviour
         {
             //initialize trackedObj
             GameObject obj = Instantiate(prefab);
-            obj.GetComponent<GuidButton>().productName = prod.id.ToString();
+            obj.GetComponent<GuidButton>().productId = prod.id;
             obj.SetActive(false);
             trackedObj.Add(prod.id.ToString(), obj);
 

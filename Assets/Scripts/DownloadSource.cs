@@ -17,8 +17,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
     public bool complete { get; private set; }
 
-    public delegate void CompleteAudioDownload(int id);
-    public CompleteAudioDownload complete_func;
+    public Action<int> complete_func;
 
     protected DownloadSource() { }
 
@@ -35,8 +34,6 @@ public class DownloadSource : Singleton<DownloadSource>
         imageDict = new Dictionary<int, Texture2D>();
         //audioDict = new Dictionary<int, AudioClip>();
 
-        complete_func = new CompleteAudioDownload(CompleteAudio);
-
         stopwatch = new Stopwatch();
 
         complete = false;
@@ -52,6 +49,16 @@ public class DownloadSource : Singleton<DownloadSource>
 #else
         StartCoroutine(DownloadProducts());
 #endif
+    }
+
+    private void OnEnable()
+    {
+        complete_func += CompleteAudio;
+    }
+
+    private void OnDisable()
+    {
+        complete_func -= CompleteAudio;
     }
 
     [Serializable]

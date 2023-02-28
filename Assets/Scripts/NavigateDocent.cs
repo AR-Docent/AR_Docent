@@ -31,12 +31,14 @@ public class NavigateDocent : MonoBehaviour
     private NavMeshAgent _agent;
     private NavMeshSurface _surface;
     private DocentAnimater _agentAnimater;
+    private AudioSource _agentAudio;
 
     private Transform _groundTrans = null;
     private List<ARPlane> _planeList;
 
     private Vector3 _dest;
     private bool _navigate;
+    private bool _audioDownloading;
 
     private Vector3 _pastPos;
 
@@ -52,6 +54,7 @@ public class NavigateDocent : MonoBehaviour
 
         _agent = navAgent.GetComponent<NavMeshAgent>();
         _agentAnimater = navAgent.GetComponentInChildren<DocentAnimater>();
+        _agentAudio = navAgent.GetComponent<AudioSource>();
 
         _planeList = new List<ARPlane>();
     }
@@ -59,6 +62,8 @@ public class NavigateDocent : MonoBehaviour
     private void Start()
     {
         Navigating = false;
+        _audioDownloading = false;
+
         navAgent.transform.position = Vector3.zero;
         //set nav disabled
         navPlane.SetActive(false);
@@ -102,8 +107,10 @@ public class NavigateDocent : MonoBehaviour
     {
         Navigating = false;
         _agent.isStopped = true;
+        //
         //rotate agent
         navAgent.transform.rotation = Quaternion.LookRotation(Camera.main.transform.position - navAgent.transform.position, navPlane.transform.up);
+        StartCoroutine(AudioPlay());
         Debug.Log("Stop");
     }
 
@@ -248,9 +255,43 @@ public class NavigateDocent : MonoBehaviour
                 //set targetPos
                 Navigate(t);
                 //load docent data
-                objGuid.LoadData();
+                StartCoroutine(LoadAudio(objGuid));
             }
         }
+    }
+
+    IEnumerator LoadAudio(GuidButton guidObj)
+    {
+        while (_audioDownloading)
+        {
+            yield return null;
+        }
+
+        if (_agentAudio.isPlaying)
+        {
+            _agentAudio.Stop();
+            _agentAudio.clip = null;
+        }
+
+        _audioDownloading = true;
+
+        guidObj.LoadData();
+        while (guidObj.bus == null)
+        {
+            yield return null;
+        }
+        _agentAudio.clip = guidObj.bus.audio;
+
+        _audioDownloading = false;
+    }
+
+    IEnumerator AudioPlay()
+    {
+        while (_audioDownloading)
+        {
+            yield return null;
+        }
+        _agentAudio.Play();
     }
 
     private void OnChanged(ARPlanesChangedEventArgs eventArgs)
