@@ -56,7 +56,7 @@ public class RefImageRuntime : MonoBehaviour
         {
             Debug.Log($"add start");
             AddReferenceImageJobState imgJobState =
-                mutableLibrary.ScheduleAddImageWithValidationJob(bus.image, bus.id.ToString(), 1f);
+                mutableLibrary.ScheduleAddImageWithValidationJob(bus.image, bus.id.ToString(), (float)bus.img_width / 100);//cm to meter
 
             states.Add(imgJobState);
         }

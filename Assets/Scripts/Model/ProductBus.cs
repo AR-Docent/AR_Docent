@@ -15,4 +15,6 @@ public class ProductBus
     public Texture2D image { get; set; }
 
     public AudioClip audio { get; set; }
+
+    public int img_width { get; set; }
 }

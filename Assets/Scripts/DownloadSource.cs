@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 using Debug = UnityEngine.Debug;
+//using UnityEditor.PackageManager.Requests;
 
 
 public class DownloadSource : Singleton<DownloadSource>
@@ -16,12 +17,14 @@ public class DownloadSource : Singleton<DownloadSource>
 
     public bool complete { get; private set; }
 
+    public delegate void CompleteAudioDownload(int id);
+    public CompleteAudioDownload complete_func;
+
     protected DownloadSource() { }
 
-    Dictionary<string, Texture2D> imageDict;
-    Dictionary<string, AudioClip> audioDict;
+    Dictionary<int, Texture2D> imageDict;
+    //Dictionary<int, AudioClip> audioDict;
 
-    Product[] products;
     int completedFile;
 
     Stopwatch stopwatch;
@@ -29,8 +32,11 @@ public class DownloadSource : Singleton<DownloadSource>
     void Awake()
     {
         productBusLst = new Dictionary<int, ProductBus>();
-        imageDict = new Dictionary<string, Texture2D>();
-        audioDict = new Dictionary<string, AudioClip>();
+        imageDict = new Dictionary<int, Texture2D>();
+        //audioDict = new Dictionary<int, AudioClip>();
+
+        complete_func = new CompleteAudioDownload(CompleteAudio);
+
         stopwatch = new Stopwatch();
 
         complete = false;
@@ -41,7 +47,7 @@ public class DownloadSource : Singleton<DownloadSource>
     void Start()
     {
         stopwatch.Start();
-#if true
+#if false
         DownloadFromWebsite("https://ardocent.azurewebsites.net/api/Unity");
 #else
         StartCoroutine(DownloadProducts());
@@ -70,36 +76,39 @@ public class DownloadSource : Singleton<DownloadSource>
                 artist = prod.Name,
                 productName = prod.Title,
                 content = prod.Content,
-                image = imageDict[prod.Image_name],
-                audio = audioDict[prod.Audio_name]
+                image = imageDict[prod.Id],
+                img_width = prod.Image_width
             };
 
             productBusLst.Add(prod.Id, bus);
         }
     }
 
-#if true
-
+#if false
+//---------------------------asyncOperation-------------------------------------
     void DownloadFromWebsite(string url)
     {
+
         try
         {
             UnityWebRequest request = UnityWebRequest.Get(url);
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
 
-            oper.completed += (asyncOperation) =>
+            oper.completed += (asyncOper) =>
             {
                 if (request.result != UnityWebRequest.Result.Success)
                 {
                     Debug.Log($"{request.error} : {request.url}");
+                    request?.Dispose();
                     throw new WebException(request.error);
                 }
 
                 string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
-                request.Dispose();
 
                 Debug.Log(jsonStr);
                 products = MyFromJson<Product>(jsonStr);
+
+                request?.Dispose();
 
                 //next step
                 StartCoroutine(DownloadFiles(products));
@@ -115,11 +124,10 @@ public class DownloadSource : Singleton<DownloadSource>
     {
         foreach (Product product in products)
         {
-            DownloadImage(product.Image_name, product.Image_url);
-            DownloadAudio(product.Audio_name, product.Audio_url);
+            DownloadImage(product.Id);
         }
 
-        while (completedFile < products.Length * 2)
+        while (completedFile < products.Length)
         {
             yield return new WaitForSeconds(0.016f);
         }
@@ -130,72 +138,102 @@ public class DownloadSource : Singleton<DownloadSource>
         Debug.LogWarning($"download complete in {stopwatch.ElapsedMilliseconds}ms");
     }
 
-    void DownloadImage(string name, string url)
+    void DownloadImage(int id)
     {
+        UnityWebRequest url_request = null;
+        UnityWebRequest file_request = null;
         try
         {
-            UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
-            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+            url_request = UnityWebRequest.Get($"https://ardocent.azurewebsites.net/api/Unity/GetImageById/{id}");
+            UnityWebRequestAsyncOperation url_oper = url_request.SendWebRequest();
 
-            oper.completed += (asyncOperation) =>
+            url_oper.completed += (asyncOper) =>
             {
-                if (request.result != UnityWebRequest.Result.Success)
+                if (url_request.result != UnityWebRequest.Result.Success)
                 {
-                    Debug.Log($"{request.error} : {request.url}");
-                    throw new WebException(request.error);
+                    Debug.Log($"{url_request.error} : {url_request.url}");
+                    throw new WebException(url_request.error);
                 }
 
-                Texture2D texture = DownloadHandlerTexture.GetContent(request);
+                string url = url_request.downloadHandler.text;
 
-                request.Dispose();
+                file_request = UnityWebRequestTexture.GetTexture(url);
+                UnityWebRequestAsyncOperation oper = file_request.SendWebRequest();
 
-                Monitor.Enter(imageDict);
-                imageDict.Add(name, texture);
-                Monitor.Exit(imageDict);
+                oper.completed += (asyncOperation) =>
+                {
+                    if (file_request.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.Log($"{file_request.error} : {file_request.url}");
+                        throw new WebException(file_request.error);
+                    }
 
-                completedFile += 1;
+                    Texture2D texture = DownloadHandlerTexture.GetContent(file_request);
+
+                    Monitor.Enter(imageDict);
+                    imageDict.Add(id, texture);
+                    Monitor.Exit(imageDict);
+
+                    completedFile += 1;
+                };
             };
         }
         catch (Exception e)
         {
             Debug.Log(e);
+        }
+        finally
+        {
+            url_request?.Dispose();
+            file_request?.Dispose();
         }
     }
 
-    void DownloadAudio(string name, string url)
+    void DownloadAudio(int id)
     {
+        UnityWebRequest url_request = null;
+        UnityWebRequest file_request = null;
         try
         {
-            UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
-            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+            url_request = UnityWebRequest.Get($"https://ardocent.azurewebsites.net/api/Unity/GetAudioById/{id}");
+            UnityWebRequestAsyncOperation url_oper = url_request.SendWebRequest();
 
-            oper.completed += (asyncOperation) =>
+            string url = url_request.downloadHandler.text;
+
+            url_oper.completed += (asyncOper) =>
             {
-                if (request.result != UnityWebRequest.Result.Success)
+                file_request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
+                UnityWebRequestAsyncOperation oper = file_request.SendWebRequest();
+
+                oper.completed += (asyncOperation) =>
                 {
-                    Debug.Log($"{request.error} : {request.url}");
-                    throw new WebException(request.error);
-                }
-                //add
-                AudioClip audio = DownloadHandlerAudioClip.GetContent(request);
+                    if (file_request.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.Log($"{file_request.error} : {file_request.url}");
+                        throw new WebException(file_request.error);
+                    }
+                    //add
+                    AudioClip audio = DownloadHandlerAudioClip.GetContent(file_request);
 
-                request.Dispose();
-
-                Monitor.Enter(audioDict);
-                audioDict.Add(name, audio);
-                Monitor.Exit(audioDict);
-
-                completedFile += 1;
+                    Monitor.Enter(audioDict);
+                    audioDict.Add(id, audio);
+                    Monitor.Exit(audioDict);
+                };
             };
         }
         catch (Exception e)
         {
             Debug.Log(e);
+        }
+        finally
+        {
+            url_request?.Dispose();
+            file_request?.Dispose();
         }
     }
 
 #else
-    //----------------------------past------------------------------------
+    //----------------------------coroutine-------------------------------------
 
     bool TaskRunning(List<IEnumerator> lst)
     {
@@ -212,96 +250,139 @@ public class DownloadSource : Singleton<DownloadSource>
     IEnumerator DownloadProducts()
     {
         Debug.Log("download start");
-        using UnityWebRequest request = UnityWebRequest.Get("https://ardocent.azurewebsites.net/api/Unity");
-        UnityWebRequestAsyncOperation oper = request.SendWebRequest();
-        while (oper.isDone == false)
+        using (UnityWebRequest request = UnityWebRequest.Get("https://ardocent.azurewebsites.net/api/Unity"))
         {
-            yield return null;
+            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+            while (oper.isDone == false)
+            {
+                yield return null;
+            }
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"{request.error} : {request.url}");
+                yield break;
+            }
+            //serialize: tojson
+            string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
+            Debug.Log(jsonStr);
+
+            //save in products
+            Product[] products = MyFromJson<Product>(jsonStr);
+
+            List<IEnumerator> task_lst = new List<IEnumerator>();
+
+            foreach (Product prod in products)
+            {
+                IEnumerator img_task = GetRemoteTexture(prod.Id);
+                task_lst.Add(img_task);
+
+                //run task
+                StartCoroutine(img_task);
+            }
+            //wait
+            while (TaskRunning(task_lst))
+            {
+                yield return new WaitForSeconds(0.016f);
+            }
+
+            //free task_lst
+            task_lst.Clear();
+            task_lst = null;
+
+            Debug.Log("download end");
+            //make product bus
+            MakeProductBus(products);
+            complete = true;
+
+            stopwatch.Stop();
+            Debug.LogWarning($"download complete in {stopwatch.ElapsedMilliseconds}ms");
         }
-        if (request.result != UnityWebRequest.Result.Success)
-        {
-            Debug.Log($"{request.error} : {request.url}");
-            yield break;
-        }
-        //serialize: tojson
-        string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
-        Debug.Log(jsonStr);
-
-        //save in products
-        Product[] products = MyFromJson<Product>(jsonStr);
-
-        List<IEnumerator> task_lst = new List<IEnumerator>();
-
-        foreach (Product prod in products)
-        {
-            IEnumerator img_task = GetRemoteTexture(prod.Image_name, prod.Image_url);
-            IEnumerator audio_task = GetRemoteAudio(prod.Audio_name, prod.Audio_url);
-
-            task_lst.Add(img_task);
-            task_lst.Add(audio_task);
-
-            //run task
-            StartCoroutine(img_task);
-            StartCoroutine(audio_task);
-        }
-        //wait
-        while (TaskRunning(task_lst))
-        {
-            yield return new WaitForSeconds(0.001f);
-        }
-
-        task_lst.Clear();
-        task_lst = null;
-
-        Debug.Log("download end");
-        //make product bus
-        MakeProductBus(products);
-
-        complete = true;
-
-        stopwatch.Stop();
-        Debug.LogWarning($"download complete in {stopwatch.ElapsedMilliseconds}ms");
     }
 
     //순차적
-    IEnumerator GetRemoteTexture(string name, string url)
+    IEnumerator GetRemoteTexture(int id)
     {
-        using UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
-        UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+        string url;
 
-        while (oper.isDone == false)
+        using (UnityWebRequest request = UnityWebRequest.Get($"https://ardocent.azurewebsites.net/api/Unity/GetImageById/{id}"))
         {
-            yield return new WaitForSeconds(0.016f);
+            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+            while (!oper.isDone)
+            {
+                yield return new WaitForSeconds(0.016f);
+            }
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"{request.error} : {request.url}");
+                yield break;
+            }
+            url = request.downloadHandler.text;
         }
-        if (request.result != UnityWebRequest.Result.Success)
+
+        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
         {
-            Debug.Log($"{request.error} : {request.url}");
-            yield break;
+            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+
+            while (oper.isDone == false)
+            {
+                yield return new WaitForSeconds(0.016f);
+            }
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"{request.error} : {request.url}");
+                yield break;
+            }
+            //add
+            imageDict.Add(id, DownloadHandlerTexture.GetContent(request));
         }
-        //add
-        imageDict.Add(name, DownloadHandlerTexture.GetContent(request));
     }
 
     //필수적이지 않.
-    IEnumerator GetRemoteAudio(string name, string url)
+    public IEnumerator GetRemoteAudio(int id)
     {
+        string url;
         AudioClip audio = null;
 
-        using UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
-        UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+        using (UnityWebRequest request = UnityWebRequest.Get($"https://ardocent.azurewebsites.net/api/Unity/GetAudioById/{id}"))
+        {
+            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+            while (!oper.isDone)
+            {
+                yield return new WaitForSeconds(0.016f);
+            }
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"{request.error} : {request.url}");
+                yield break;
+            }
+            url = request.downloadHandler.text;
+        }
 
-        while (oper.isDone == false)
+        using (UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV))
         {
-            yield return new WaitForSeconds(0.016f);
+            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+
+            while (oper.isDone == false)
+            {
+                yield return new WaitForSeconds(0.016f);
+            }
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"{request.error} : {request.url}");
+                yield break;
+            }
+            //add
+            audio = DownloadHandlerAudioClip.GetContent(request);
+            //audioDict.Add(id, audio);
+            productBusLst[id].audio = audio;
+
+            complete_func(id);
         }
-        if (request.result != UnityWebRequest.Result.Success)
-        {
-            Debug.Log($"{request.error} : {request.url}");
-            yield break;
-        }
-        //add
-        audio = DownloadHandlerAudioClip.GetContent(request);
-        audioDict.Add(name, audio);
+    }
+
+    void CompleteAudio(int id)
+    {
+        Debug.Log("audio download task complete");
     }
 #endif
 }

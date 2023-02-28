@@ -11,13 +11,7 @@ public class Product
 
     public string Title;
 
-    public string Image_name;
-
-    public string Audio_name;
-
-    public string Image_url;
-
-    public string Audio_url;
-
     public string Content;
+
+    public int Image_width;
 }
