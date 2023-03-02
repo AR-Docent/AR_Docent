@@ -2,131 +2,110 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
-using UnityEditor.ShaderGraph.Serialization;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
+using Unity.Jobs;
 
 public class RefImageRuntime : MonoBehaviour
 {
     ARTrackedImageManager manager;
-    RuntimeReferenceImageLibrary runtimeLibrary;
+    XRReferenceImageLibrary referenceImages;
 
-    public List<string> image_names;
-    
-    public Dictionary<string, Texture2D> imageDict; 
-    public Dictionary<string, AudioClip> audioDict;
-
-    private void Awake()
-    {
-        //image_names = new List<string>();
-        imageDict = new Dictionary<string, Texture2D>();
-        audioDict = new Dictionary<string, AudioClip>();
-    }
+    public bool completed { get; private set; }
 
     // Start is called before the first frame update
-    [Obsolete]
     void Start()
     {
-        //manager = GetComponent<ARTrackedImageManager>();
-        //runtimeLibrary = manager.CreateRuntimeLibrary();
-        StartCoroutine(DownloadProducts());
+        manager = GetComponent<ARTrackedImageManager>();
+        StartCoroutine(DownloadProducts()); //after ar session init
     }
 
-    public void Initialized()
+    bool TaskRunning(List<IEnumerator> lst)
     {
-        if (runtimeLibrary is MutableRuntimeReferenceImageLibrary mutableLibrary)
+        bool result = true;
+
+        foreach (IEnumerator iter in lst)
         {
-            //add image to mutableLibrary
-            //mutableLibrary.ScheduleAddImageJob();
+            bool i = !(iter.MoveNext());
+            result &= i;
         }
+        return !result;
+    }
+
+    bool StateRunning(List<AddReferenceImageJobState> lst)
+    {
+        bool state = true;
+
+        foreach (AddReferenceImageJobState i in lst)
+        {
+            state &= i.jobHandle.IsCompleted;
+        }
+        return !state;
+    }
+
+    IEnumerator RefInitialized()
+    {
+        Debug.Log("make runtime library start");
+        
+        MutableRuntimeReferenceImageLibrary mutableLibrary = manager.referenceLibrary as MutableRuntimeReferenceImageLibrary;
+        List<AddReferenceImageJobState> states = new();
+
+        //add image to mutableLibrary
+        foreach (ProductBus bus in DownloadSource.Instance.productBusLst.Values)
+        {
+            Debug.Log($"add start");
+            AddReferenceImageJobState imgJobState =
+                mutableLibrary.ScheduleAddImageWithValidationJob(bus.image, bus.id.ToString(), (float)bus.img_width / 100);//cm to meter
+
+            states.Add(imgJobState);
+        }
+
+        while (StateRunning(states))
+        {
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        Debug.Log("make runtime library end");
     }
 
     IEnumerator DownloadProducts()
     {
-        Debug.Log("download start");
-        using UnityWebRequest request = UnityWebRequest.Get("https://ardocent.azurewebsites.net/api/Unity");
-        UnityWebRequestAsyncOperation oper = request.SendWebRequest();
-        while (oper.isDone == false)
+        if (ARSession.state == ARSessionState.None
+            || ARSession.state == ARSessionState.CheckingAvailability)
+            yield return ARSession.CheckAvailability();
+
+        if (ARSession.state == ARSessionState.Unsupported)
         {
-            Debug.Log("loading");
-            yield return null;
-        }
-        if (request.result != UnityWebRequest.Result.Success)
-        {
-            Debug.Log($"{request.error} : {request.url}");
+            // unsupported devices
+            Debug.Log("unsupported device");
             yield break;
         }
-        //serialize: tojson
-        //string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
-        string jsonStr = "{ \"Items\":" + request.downloadHandler.text + "}";
-        Debug.Log(jsonStr);
-        Product[] products = MyFromJson<Product>(jsonStr);
 
-        foreach (Product prod in products)
+        if (!manager.descriptor.supportsMutableLibrary)
         {
-            StartCoroutine(GetRemoteTexture(prod.Image_name, prod.Image_url));
-            StartCoroutine(GetRemoteAudio(prod.Audio_name, prod.Audio_url));
-        }
-        Debug.Log("download end");
-    }
-
-    [Serializable]
-    private class Wrapper<T>
-    {
-        public T[] Items;
-    }
-
-    private T[] MyFromJson<T>(string json)
-    {
-        Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(json);
-        return wrapper.Items;
-    }
-
-    IEnumerator GetRemoteTexture(string name, string url)
-    {
-        using UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
-        UnityWebRequestAsyncOperation oper = request.SendWebRequest();
-
-        while (oper.isDone == false)
-        {
-            yield return null;
-        }
-        if (request.result != UnityWebRequest.Result.Success)
-        {
-            Debug.Log($"{request.error} : {request.url}");
+            Debug.Log("unsupport mutable library");
             yield break;
         }
-        //add
-        //image_names.Add(name);
-        imageDict.Add(name, DownloadHandlerTexture.GetContent(request));
-    }
+        //start
 
-    IEnumerator GetRemoteAudio(string name, string url)
-    {
-        AudioClip audio = null;
+        List<IEnumerator> task_lst = new List<IEnumerator>();
 
-        using UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
-        UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+        manager.referenceLibrary = manager.CreateRuntimeLibrary(referenceImages);
+        //make xr reference
+        IEnumerator ref_task = RefInitialized();
 
-        while (oper.isDone == false)
+        task_lst.Add(ref_task);
+        StartCoroutine(ref_task);
+        //wait
+        while (TaskRunning(task_lst))
         {
-            Debug.Log("audio loading");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.3f);
         }
-        if (request.result != UnityWebRequest.Result.Success)
-        {
-            Debug.Log($"{request.error} : {request.url}");
-            yield break;
-        }
-        //add
-        audio = DownloadHandlerAudioClip.GetContent(request);
 
-        Debug.Log(audio.length);
-        audioDict.Add(name, audio);
+
+        manager.enabled = true;
+
+        Debug.Log("ref upload end");
     }
 }
