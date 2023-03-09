@@ -262,7 +262,7 @@ public class DownloadSource : Singleton<DownloadSource>
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
             while (oper.isDone == false)
             {
-                yield return null;
+                yield return new WaitForSeconds(0.1f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -289,7 +289,7 @@ public class DownloadSource : Singleton<DownloadSource>
             //wait
             while (TaskRunning(task_lst))
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(0.1f);
             }
 
             //free task_lst
@@ -316,7 +316,7 @@ public class DownloadSource : Singleton<DownloadSource>
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
             while (!oper.isDone)
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(0.1f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -332,7 +332,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
             while (oper.isDone == false)
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(0.5f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -355,7 +355,7 @@ public class DownloadSource : Singleton<DownloadSource>
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
             while (!oper.isDone)
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(0.1f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -371,7 +371,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
             while (oper.isDone == false)
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(1f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
