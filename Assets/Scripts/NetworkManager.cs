@@ -46,12 +46,27 @@ public class NetworkManager
         return ret;
     }
 
-    /*
-    public static async T GetDataAsync<T>(string url)
+    public static async Task<T> GetDataAsync<T>(string url)
     {
-        T ret = default;
-        return ret;
-        
+        return await Task.Run<T>(async () =>
+        {
+            T ret = default;
+
+            using (UnityWebRequest request = UnityWebRequest.Get(url))
+            {
+                UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+                while (!oper.isDone)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(10));
+                }
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"{request.error} : {request.url}");
+                    throw new Exception($"{request.error} : {request.url}");
+                }
+                ret = FromByteArray<T>(request.downloadHandler.data);
+            }
+            return ret;
+        });
     }
-    */
 }
