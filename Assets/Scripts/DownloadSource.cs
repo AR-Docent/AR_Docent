@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 using Debug = UnityEngine.Debug;
+using System.Threading.Tasks;
 //using UnityEditor.PackageManager.Requests;
 
 
@@ -73,7 +74,7 @@ public class DownloadSource : Singleton<DownloadSource>
         return wrapper.Items;
     }
 
-    void MakeProductBus(Product[] products)
+    void MakeProductBus(IEnumerable<Product> products)
     {
         foreach (Product prod in products)
         {
