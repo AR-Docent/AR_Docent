@@ -9,6 +9,7 @@ using UnityEngine.Networking;
 
 using Debug = UnityEngine.Debug;
 using System.Threading.Tasks;
+using UnityEditor.PackageManager.Requests;
 //using UnityEditor.PackageManager.Requests;
 
 
@@ -48,11 +49,8 @@ public class DownloadSource : Singleton<DownloadSource>
     void Start()
     {
         stopwatch.Start();
-#if false
-        DownloadFromWebsite("https://ardocent.azurewebsites.net/api/Unity");
-#else
         StartCoroutine(DownloadProductsAsync());
-#endif
+        //StartCoroutine(DownloadProducts());
     }
 
     private void OnEnable()
@@ -245,7 +243,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
 #else
     //----------------------------coroutine-------------------------------------
-
+    /*
     bool TaskRunning(List<IEnumerator> lst)
     {
         bool result = true;
@@ -310,48 +308,6 @@ public class DownloadSource : Singleton<DownloadSource>
         }
     }
 
-    IEnumerator DownloadProductsAsync()
-    {
-        Debug.Log("download start");
-        Task<IEnumerable<Product>> t = nm.GetDataListFromJsonAsync<Product>("https://ardocent.azurewebsites.net/api/Unity");
-        while (!t.IsCompleted)
-        {
-            Debug.Log("waiting");
-            yield return null;
-        }
-        if (!t.IsCompletedSuccessfully)
-            yield break;
-        var products = t.Result;
-
-        List<IEnumerator> task_lst = new List<IEnumerator>();
-
-        foreach (Product prod in products)
-        {
-            IEnumerator img_task = GetRemoteTexture(prod.Id);
-            task_lst.Add(img_task);
-
-            //run task
-            StartCoroutine(img_task);
-        }
-        //wait
-        while (TaskRunning(task_lst))
-        {
-            yield return new WaitForSeconds(0.1f);
-        }
-
-        //free task_lst
-        task_lst.Clear();
-        task_lst = null;
-
-        Debug.Log("download end");
-        //make product bus
-        MakeProductBus(products);
-        complete = true;
-
-        stopwatch.Stop();
-        Debug.LogWarning($"download complete in {stopwatch.ElapsedMilliseconds}ms");
-    }
-
     //순차적
     IEnumerator GetRemoteTexture(int id)
     {
@@ -389,6 +345,7 @@ public class DownloadSource : Singleton<DownloadSource>
             imageDict.Add(id, DownloadHandlerTexture.GetContent(request));
         }
     }
+    */
 
     //필수적이지 않.
     public IEnumerator GetRemoteAudio(int id)
@@ -437,5 +394,55 @@ public class DownloadSource : Singleton<DownloadSource>
     {
         Debug.Log("audio download task complete");
     }
+
+    IEnumerator DownloadProductsAsync()
+    {
+        Debug.Log("download start");
+
+        Task<IEnumerable<Product>> t = nm.GetDataListFromJsonTask<Product>("http://ardocent.azurewebsites.net/api/Unity");
+
+        //wait
+        while (!t.IsCompleted)
+            yield return null;
+
+        if (!t.IsCompletedSuccessfully)
+        {
+            Debug.LogError("completed badly" + t.Result);
+            yield break;
+        }
+
+        IEnumerable<Product> products = t.Result;
+
+        List<Task<Texture2D>> t_lst = new();
+        List<int> t_idx = new();
+        foreach (Product prod in products)
+        {
+            t_lst.Add(nm.GetTextureTask($"https://ardocent.azurewebsites.net/api/Unity/GetImageById/{prod.Id}"));
+            t_idx.Add(prod.Id);
+        }
+
+        Task adder = Task.Run(() =>
+        {
+            lock (imageDict)
+            {
+                Task.WaitAll(t_lst.ToArray());
+                for (int i = 0; i < t_lst.Count; ++i)
+                    imageDict.Add(t_idx[i], t_lst[i].Result);
+            }
+            return Task.CompletedTask;
+        });
+
+        while (!adder.IsCompleted)
+            yield return new WaitForSeconds(0.5f);
+
+        Debug.Log("download end");
+        //make product bus
+        MakeProductBus(products);
+        complete = true;
+
+        stopwatch.Stop();
+        Debug.LogWarning($"download complete in {stopwatch.ElapsedMilliseconds}ms");
+    }
+
 #endif
 }

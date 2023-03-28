@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.PackageManager.UI;
@@ -49,62 +50,9 @@ public class NetworkManager : MonoBehaviour
         return ArrayFromJson<T>(str);
     }
 
-    public string GetRequestStr(string url)
+    private IEnumerator GetRequestStrIEnumerator(string url)
     {
-        string ret = default;
-        try
-        {
-            using (UnityWebRequest request = UnityWebRequest.Get(url))
-            {
-                UnityWebRequestAsyncOperation oper = request.SendWebRequest();
-                while (!oper.isDone) { }
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    Debug.LogError($"{request.error} : {request.url}");
-                    throw new Exception($"{request.error} : {request.url}");
-                }
-                ret = request.downloadHandler.text;
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogException(e);
-        }
-        return ret;
-    }
-
-    public Task<string> GetRequestStrAsync(string url)
-    {
-        try
-        {
-            using (UnityWebRequest request = UnityWebRequest.Get(url))
-            {
-                UnityWebRequestAsyncOperation oper = request.SendWebRequest();
-                return Task<string>.Run(async () =>
-                {
-                    while (!oper.isDone)
-                    {
-                        await Task.Yield();
-                    }
-                    if (request.result != UnityWebRequest.Result.Success)
-                    {
-                        Debug.LogError($"{request.error} : {request.url}");
-                        throw new Exception($"{request.error} : {request.url}");
-                    }
-                    return request.downloadHandler.text;
-                });
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError(e);
-            return null;
-        }
-    }
-
-    public IEnumerator GetRequestStrIEnumerator(string url)
-    {
-        yield return null;
+        Debug.Log("coroutine thread:" + Thread.CurrentThread.ManagedThreadId);
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
@@ -121,43 +69,45 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
-    public T GetDataFromJson<T>(string url)
-    {
-        return FromJson<T>(GetRequestStr(url));
-    }
-
-    public IEnumerable<T> GetDataListFromJson<T>(string url)
-    {
-        return IENumerableFromJson<T>(GetRequestStr(url));
-    }
-
-    public Task<T> GetDataFromJsonAsync<T>(string url)
-    {
-        //return FromJson<T>(GetRequestStrAsync(url).Result);
-        IEnumerator task = GetRequestStrIEnumerator(url);
-        StartCoroutine(task);
-        return Task.Run(() => {
-            while (task.MoveNext())
-            {
-                Task.Yield();
-            }
-            return FromJson<T>((string)task.Current);
-        });
-    }
-
-    public Task<IEnumerable<T>> GetDataListFromJsonAsync<T>(string url)
+    public Task<T> GetDataFromJsonTask<T>(string url)
     {
         IEnumerator task = GetRequestStrIEnumerator(url);
         try
         {
-            //return IENumerableFromJson<T>(GetRequestStrAsync(url).Result);
             StartCoroutine(task);
-            return Task.Run<IEnumerable<T>>(() =>
+            return Task.Run(() =>
             {
-                while (task.MoveNext())
+                while (task.Current == null)
                 {
                     Task.Yield();
                 }
+                if (typeof(T) == typeof(string))
+                    return ((T)task.Current);
+                return FromJson<T>((string)task.Current);
+            });
+        }
+        catch (Exception e)
+        {
+            StopCoroutine(task);
+            Debug.LogError(e);
+            return Task.FromException<T>(e);
+        }
+    }
+
+    public Task<IEnumerable<T>> GetDataListFromJsonTask<T>(string url)
+    {
+        IEnumerator task = GetRequestStrIEnumerator(url);
+        try
+        {
+            StartCoroutine(task);
+            return Task.Run<IEnumerable<T>>(() =>
+            {
+                Debug.Log("wait task start:" + Thread.CurrentThread.ManagedThreadId);
+                while (task.Current == null)
+                {
+                    Task.Yield();
+                }
+                Debug.Log("wait task end:" + Thread.CurrentThread.ManagedThreadId);
                 return IENumerableFromJson<T>((string)task.Current);
             });
         }
@@ -165,55 +115,111 @@ public class NetworkManager : MonoBehaviour
         {
             StopCoroutine(task);
             Debug.LogError(e);
-            return null;
+            return Task.FromException<IEnumerable<T>>(e);
         }
     }
 
-    public T GetDataFromJsonAsync_v2<T>(string url)
+    private IEnumerator<Texture2D> GetTexture2DIEnumerator(Task<string> t)
     {
-        return FromJson<T>(GetRequestStrAsync(url).Result);
-    }
-
-    public IEnumerable<T> GetDataListFromJsonAsync_v2<T>(string url)
-    {
-        return IENumerableFromJson<T>(GetRequestStrAsync(url).Result);
-    }
-
-    public Texture2D GetTexture2D(string url)
-    {
-        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
+        while (!t.IsCompleted)
+        {
+            yield return null;
+        }
+        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(t.Result))
         {
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
 
-            while (oper.isDone == false) { }
+            while (oper.isDone == false)
+            {
+                yield return null;
+            }
             if (request.result != UnityWebRequest.Result.Success)
             {
                 Debug.Log($"{request.error} : {request.url}");
                 throw new Exception($"{request.error} : {request.url}");
             }
-            return DownloadHandlerTexture.GetContent(request);
+            yield return DownloadHandlerTexture.GetContent(request);
         }
     }
 
-    public async Task<Texture2D> GetTexture2DAsync(string url)
+    public Task<Texture2D> GetTextureTask(string url)
     {
-        return await Task.Run<Texture2D>(() =>
+        Task<string> t = GetDataFromJsonTask<string>(url);
+        IEnumerator t_task = GetTexture2DIEnumerator(t);
+        try
         {
-            using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
-            {
-                UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+            Debug.Log("start task");
+            StartCoroutine(t_task);
 
-                while (oper.isDone == false)
+            return Task.Run<Texture2D>(() =>
+            {
+                Debug.Log("wait imgtask start:" + Thread.CurrentThread.ManagedThreadId);
+                Task.WaitAll(t);
+                while (t_task.Current == null)
                 {
                     Task.Yield();
                 }
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    Debug.Log($"{request.error} : {request.url}");
-                    throw new Exception($"{request.error} : {request.url}");
-                }
-                return DownloadHandlerTexture.GetContent(request);
+                Debug.Log("wait imgtask end:" + Thread.CurrentThread.ManagedThreadId);
+                return (Texture2D)t_task.Current;
+            });
+        }
+        catch (Exception e)
+        {
+            StopCoroutine(t_task);
+            Debug.LogError(e);
+            return Task.FromException<Texture2D>(e);
+        }
+    }
+
+    private IEnumerator<AudioClip> GetAudioIEnumerator(Task<string> t)
+    {
+        while (!t.IsCompleted)
+        {
+            yield return null;
+        }
+        using (UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(t.Result, AudioType.WAV))
+        {
+            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+
+            while (oper.isDone == false)
+            {
+                yield return null;
             }
-        });
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"{request.error} : {request.url}");
+                throw new Exception($"{request.error} : {request.url}");
+            }
+            yield return DownloadHandlerAudioClip.GetContent(request);
+        }
+    }
+
+    public Task<AudioClip> GetAudioTask(string url)
+    {
+        Task<string> t = GetDataFromJsonTask<string>(url);
+        IEnumerator a_task = GetAudioIEnumerator(t);
+        try
+        {
+            Debug.Log("start task");
+            StartCoroutine(a_task);
+
+            return Task.Run<AudioClip>(() =>
+            {
+                Debug.Log("wait audiotask start:" + Thread.CurrentThread.ManagedThreadId);
+                Task.WaitAll(t);
+                while (a_task.Current == null)
+                {
+                    Task.Yield();
+                }
+                Debug.Log("wait audiotask end:" + Thread.CurrentThread.ManagedThreadId);
+                return (AudioClip)a_task.Current;
+            });
+        }
+        catch (Exception e)
+        {
+            StopCoroutine(a_task);
+            Debug.LogError(e);
+            return Task.FromException<AudioClip>(e);
+        }
     }
 }
