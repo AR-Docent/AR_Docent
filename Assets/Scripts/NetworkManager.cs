@@ -12,7 +12,7 @@ using UnityEditor.PackageManager.UI;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class NetworkManager
+public class NetworkManager : MonoBehaviour
 {
     [Serializable]
     private class Wrapper<T>
@@ -20,13 +20,13 @@ public class NetworkManager
         public T[] Items;
     }
 
-    private static T[] ArrayFromJson<T>(string json)
+    private T[] ArrayFromJson<T>(string json)
     {
         Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(json);
         return wrapper.Items;
     }
 
-    private static T FromJson<T>(string jsonStr)
+    private T FromJson<T>(string jsonStr)
     {
         T ret = default;
 
@@ -37,7 +37,7 @@ public class NetworkManager
         return JsonUtility.FromJson<T>(jsonStr);
     }
 
-    private static IEnumerable<T> IENumerableFromJson<T>(string jsonStr)
+    private IEnumerable<T> IENumerableFromJson<T>(string jsonStr)
     {
         T[] retLst = default;
 
@@ -49,7 +49,7 @@ public class NetworkManager
         return ArrayFromJson<T>(str);
     }
 
-    public static string GetRequestStr(string url)
+    public string GetRequestStr(string url)
     {
         string ret = default;
         try
@@ -73,48 +73,113 @@ public class NetworkManager
         return ret;
     }
 
-    public static Task<string> GetRequestStrAsync(string url)
+    public Task<string> GetRequestStrAsync(string url)
     {
-        using (UnityWebRequest request = UnityWebRequest.Get(url))
+        try
         {
-            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
-            return Task<string>.Run(async () =>
+            using (UnityWebRequest request = UnityWebRequest.Get(url))
             {
-                while (!oper.isDone)
+                UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+                return Task<string>.Run(async () =>
                 {
-                    await Task.Yield();
-                }
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    Debug.LogError($"{request.error} : {request.url}");
-                    throw new Exception($"{request.error} : {request.url}");
-                }
-                return request.downloadHandler.text;
-            });
+                    while (!oper.isDone)
+                    {
+                        await Task.Yield();
+                    }
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.LogError($"{request.error} : {request.url}");
+                        throw new Exception($"{request.error} : {request.url}");
+                    }
+                    return request.downloadHandler.text;
+                });
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            return null;
         }
     }
 
-    public static T GetDataFromJson<T>(string url)
+    public IEnumerator GetRequestStrIEnumerator(string url)
+    {
+        yield return null;
+        using (UnityWebRequest request = UnityWebRequest.Get(url))
+        {
+            UnityWebRequestAsyncOperation oper = request.SendWebRequest();
+            while (!oper.isDone)
+            {
+                yield return null;
+            }
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"{request.error} : {request.url}");
+                throw new Exception($"{request.error} : {request.url}");
+            }
+            yield return request.downloadHandler.text;
+        }
+    }
+
+    public T GetDataFromJson<T>(string url)
     {
         return FromJson<T>(GetRequestStr(url));
     }
 
-    public static IEnumerable<T> GetDataListFromJson<T>(string url)
+    public IEnumerable<T> GetDataListFromJson<T>(string url)
     {
         return IENumerableFromJson<T>(GetRequestStr(url));
     }
 
-    public static async Task<T> GetDataFromJsonAsync<T>(string url)
+    public Task<T> GetDataFromJsonAsync<T>(string url)
     {
-        return FromJson<T>(await GetRequestStrAsync(url));
+        //return FromJson<T>(GetRequestStrAsync(url).Result);
+        IEnumerator task = GetRequestStrIEnumerator(url);
+        StartCoroutine(task);
+        return Task.Run(() => {
+            while (task.MoveNext())
+            {
+                Task.Yield();
+            }
+            return FromJson<T>((string)task.Current);
+        });
     }
 
-    public static async Task<IEnumerable<T>> GetDataListFromJsonAsync<T>(string url)
+    public Task<IEnumerable<T>> GetDataListFromJsonAsync<T>(string url)
     {
-        return IENumerableFromJson<T>(await GetRequestStrAsync(url));
+        IEnumerator task = GetRequestStrIEnumerator(url);
+        try
+        {
+            //return IENumerableFromJson<T>(GetRequestStrAsync(url).Result);
+            StartCoroutine(task);
+            return Task.Run<IEnumerable<T>>(() =>
+            {
+                while (task.MoveNext())
+                {
+                    Task.Yield();
+                }
+                return IENumerableFromJson<T>((string)task.Current);
+            });
+        }
+        catch (Exception e)
+        {
+            StopCoroutine(task);
+            Debug.LogError(e);
+            return null;
+        }
     }
 
-    public static Texture2D GetTexture2D(string url)
+    public T GetDataFromJsonAsync_v2<T>(string url)
+    {
+        return FromJson<T>(GetRequestStrAsync(url).Result);
+    }
+
+    public IEnumerable<T> GetDataListFromJsonAsync_v2<T>(string url)
+    {
+        return IENumerableFromJson<T>(GetRequestStrAsync(url).Result);
+    }
+
+    public Texture2D GetTexture2D(string url)
     {
         using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
         {
@@ -130,7 +195,7 @@ public class NetworkManager
         }
     }
 
-    public static async Task<Texture2D> GetTexture2DAsync(string url)
+    public async Task<Texture2D> GetTexture2DAsync(string url)
     {
         return await Task.Run<Texture2D>(() =>
         {

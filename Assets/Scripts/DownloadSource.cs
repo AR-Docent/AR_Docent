@@ -23,6 +23,8 @@ public class DownloadSource : Singleton<DownloadSource>
     protected DownloadSource() { }
 
     Dictionary<int, Texture2D> imageDict;
+
+    NetworkManager nm;
     //Dictionary<int, AudioClip> audioDict;
 
     int completedFile;
@@ -34,6 +36,7 @@ public class DownloadSource : Singleton<DownloadSource>
         productBusLst = new Dictionary<int, ProductBus>();
         imageDict = new Dictionary<int, Texture2D>();
         //audioDict = new Dictionary<int, AudioClip>();
+        nm = gameObject.AddComponent<NetworkManager>();
 
         stopwatch = new Stopwatch();
 
@@ -48,7 +51,7 @@ public class DownloadSource : Singleton<DownloadSource>
 #if false
         DownloadFromWebsite("https://ardocent.azurewebsites.net/api/Unity");
 #else
-        StartCoroutine(DownloadProducts());
+        StartCoroutine(DownloadProductsAsync());
 #endif
     }
 
@@ -305,6 +308,48 @@ public class DownloadSource : Singleton<DownloadSource>
             stopwatch.Stop();
             Debug.LogWarning($"download complete in {stopwatch.ElapsedMilliseconds}ms");
         }
+    }
+
+    IEnumerator DownloadProductsAsync()
+    {
+        Debug.Log("download start");
+        Task<IEnumerable<Product>> t = nm.GetDataListFromJsonAsync<Product>("https://ardocent.azurewebsites.net/api/Unity");
+        while (!t.IsCompleted)
+        {
+            Debug.Log("waiting");
+            yield return null;
+        }
+        if (!t.IsCompletedSuccessfully)
+            yield break;
+        var products = t.Result;
+
+        List<IEnumerator> task_lst = new List<IEnumerator>();
+
+        foreach (Product prod in products)
+        {
+            IEnumerator img_task = GetRemoteTexture(prod.Id);
+            task_lst.Add(img_task);
+
+            //run task
+            StartCoroutine(img_task);
+        }
+        //wait
+        while (TaskRunning(task_lst))
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        //free task_lst
+        task_lst.Clear();
+        task_lst = null;
+
+        Debug.Log("download end");
+        //make product bus
+        MakeProductBus(products);
+        complete = true;
+
+        stopwatch.Stop();
+        Debug.LogWarning($"download complete in {stopwatch.ElapsedMilliseconds}ms");
     }
 
     //순차적
