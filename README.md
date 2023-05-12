@@ -26,3 +26,12 @@ iOS, liDAR센서가 내장된 기기.
 |tracking image upload server|<ul><li>- [x] </li></ul>|트래킹할 작품이미지와 설명을 업로드하는 서버|
 |docent animation|<ul><li>- [x] </li></ul>|docent의 안내 rig animation|
 |docent modeling|<ul><li>- [ ] </li></ul>| docent디자인, 모델링|
+
+# 구현 상태
+
+# 향후 계획
+Unity Native call을 사용하거나 Apple ML API를 사용하거나 Asset Store을 사용하여 Voice to Text 기능 구현.
+https://developer.apple.com/kr/machine-learning/api/#speech
+
+AutoGPT를 사용하여 질문에 대한 답변 생성
+https://github.com/Significant-Gravitas/Auto-GPT
