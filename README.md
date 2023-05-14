@@ -35,3 +35,8 @@ https://developer.apple.com/kr/machine-learning/api/#speech
 
 AutoGPT를 사용하여 질문에 대한 답변 생성
 https://github.com/Significant-Gravitas/Auto-GPT
+
+database 설계 변경
+
+ardocent 사이트에 로그인 추가.
+
