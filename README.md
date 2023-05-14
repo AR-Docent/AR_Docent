@@ -31,7 +31,8 @@ iOS, liDAR센서가 내장된 기기.
 https://youtu.be/PZrLlL9cG5M
 <img width="960" alt="스크린샷 2023-05-14 오후 2 33 01" src="https://github.com/AR-Docent/AR_Docent/assets/69339846/17821f23-d5aa-429d-b3c8-8cbcd7a06793">
 
-
+(uml 쓰는 법을 공부해야함)
+![ARDocent](https://github.com/AR-Docent/AR_Docent/assets/69339846/72f42cd5-b668-42ce-9075-f8276999a946)
 
 
 # 향후 계획
