@@ -28,6 +28,8 @@ iOS, liDAR센서가 내장된 기기.
 |docent modeling|<ul><li>- [ ] </li></ul>| docent디자인, 모델링|
 
 # 구현 상태
+https://youtu.be/PZrLlL9cG5M
+
 
 # 향후 계획
 Unity Native call을 사용하거나 Apple ML API를 사용하거나 Asset Store을 사용하여 Voice to Text 기능 구현.
