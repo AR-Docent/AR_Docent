@@ -8,6 +8,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 using Debug = UnityEngine.Debug;
+using System.Threading.Tasks;
+using UnityEditor.PackageManager.Requests;
 //using UnityEditor.PackageManager.Requests;
 
 
@@ -22,6 +24,8 @@ public class DownloadSource : Singleton<DownloadSource>
     protected DownloadSource() { }
 
     Dictionary<int, Texture2D> imageDict;
+
+    NetworkManager nm;
     //Dictionary<int, AudioClip> audioDict;
 
     int completedFile;
@@ -33,6 +37,7 @@ public class DownloadSource : Singleton<DownloadSource>
         productBusLst = new Dictionary<int, ProductBus>();
         imageDict = new Dictionary<int, Texture2D>();
         //audioDict = new Dictionary<int, AudioClip>();
+        nm = gameObject.AddComponent<NetworkManager>();
 
         stopwatch = new Stopwatch();
 
@@ -44,11 +49,8 @@ public class DownloadSource : Singleton<DownloadSource>
     void Start()
     {
         stopwatch.Start();
-#if false
-        DownloadFromWebsite("https://ardocent.azurewebsites.net/api/Unity");
-#else
-        StartCoroutine(DownloadProducts());
-#endif
+        StartCoroutine(DownloadProductsAsync());
+        //StartCoroutine(DownloadProducts());
     }
 
     private void OnEnable()
@@ -73,7 +75,7 @@ public class DownloadSource : Singleton<DownloadSource>
         return wrapper.Items;
     }
 
-    void MakeProductBus(Product[] products)
+    void MakeProductBus(IEnumerable<Product> products)
     {
         foreach (Product prod in products)
         {
@@ -241,7 +243,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
 #else
     //----------------------------coroutine-------------------------------------
-
+    /*
     bool TaskRunning(List<IEnumerator> lst)
     {
         bool result = true;
@@ -262,7 +264,7 @@ public class DownloadSource : Singleton<DownloadSource>
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
             while (oper.isDone == false)
             {
-                yield return null;
+                yield return new WaitForSeconds(0.1f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -289,7 +291,7 @@ public class DownloadSource : Singleton<DownloadSource>
             //wait
             while (TaskRunning(task_lst))
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(0.1f);
             }
 
             //free task_lst
@@ -316,7 +318,7 @@ public class DownloadSource : Singleton<DownloadSource>
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
             while (!oper.isDone)
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(0.1f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -332,7 +334,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
             while (oper.isDone == false)
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(0.5f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -343,6 +345,7 @@ public class DownloadSource : Singleton<DownloadSource>
             imageDict.Add(id, DownloadHandlerTexture.GetContent(request));
         }
     }
+    */
 
     //필수적이지 않.
     public IEnumerator GetRemoteAudio(int id)
@@ -355,7 +358,7 @@ public class DownloadSource : Singleton<DownloadSource>
             UnityWebRequestAsyncOperation oper = request.SendWebRequest();
             while (!oper.isDone)
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(0.1f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -371,7 +374,7 @@ public class DownloadSource : Singleton<DownloadSource>
 
             while (oper.isDone == false)
             {
-                yield return new WaitForSeconds(0.016f);
+                yield return new WaitForSeconds(1f);
             }
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -391,5 +394,55 @@ public class DownloadSource : Singleton<DownloadSource>
     {
         Debug.Log("audio download task complete");
     }
+
+    IEnumerator DownloadProductsAsync()
+    {
+        Debug.Log("download start");
+
+        Task<IEnumerable<Product>> t = nm.GetDataListFromJsonTask<Product>("http://ardocent.azurewebsites.net/api/Unity");
+
+        //wait
+        while (!t.IsCompleted)
+            yield return null;
+
+        if (!t.IsCompletedSuccessfully)
+        {
+            Debug.LogError("completed badly" + t.Result);
+            yield break;
+        }
+
+        IEnumerable<Product> products = t.Result;
+
+        List<Task<Texture2D>> t_lst = new();
+        List<int> t_idx = new();
+        foreach (Product prod in products)
+        {
+            t_lst.Add(nm.GetTextureTask($"https://ardocent.azurewebsites.net/api/Unity/GetImageById/{prod.Id}"));
+            t_idx.Add(prod.Id);
+        }
+
+        Task adder = Task.Run(() =>
+        {
+            lock (imageDict)
+            {
+                Task.WaitAll(t_lst.ToArray());
+                for (int i = 0; i < t_lst.Count; ++i)
+                    imageDict.Add(t_idx[i], t_lst[i].Result);
+            }
+            return Task.CompletedTask;
+        });
+
+        while (!adder.IsCompleted)
+            yield return new WaitForSeconds(0.5f);
+
+        Debug.Log("download end");
+        //make product bus
+        MakeProductBus(products);
+        complete = true;
+
+        stopwatch.Stop();
+        Debug.LogWarning($"download complete in {stopwatch.ElapsedMilliseconds}ms");
+    }
+
 #endif
 }
